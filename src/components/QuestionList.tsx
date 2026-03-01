@@ -5,7 +5,7 @@ import Link from "next/link";
 import { deleteQuestion, deleteQuestions, updateQuestion } from "@/actions/question";
 import {
     Pencil, Trash2, Database, Upload, Plus, ChevronDown, ChevronRight, Hash,
-    CheckSquare, Square, X, Save
+    CheckSquare, Square, X, Save, Tag
 } from "lucide-react";
 import { toast } from "sonner";
 import { Question } from "@/types";
@@ -31,8 +31,8 @@ export default function QuestionList({ questions }: { questions: Question[] }) {
         }
     );
 
-    const toggleSubject = (subject: string) => {
-        setExpandedSubjects(prev => ({ ...prev, [subject]: !prev[subject] }));
+    const toggleSubject = (subject: string, currentlyOpen: boolean) => {
+        setExpandedSubjects(prev => ({ ...prev, [subject]: !currentlyOpen }));
     };
 
     const handleDelete = (id: string) => {
@@ -126,15 +126,14 @@ export default function QuestionList({ questions }: { questions: Question[] }) {
     return (
         <div className="relative pb-24 space-y-4">
             {Object.entries(groupedQuestions).map(([subject, subjectQuestions]) => {
-                const isExpanded = expandedSubjects[subject] !== false; // defaulted to expanded usually, but logic inverted for UX initially ok
-                // Let's actually keep the default behavior where it's closed unless explicitly opened if too many. I will default to expanded if fewer subjects.
-                const opened = expandedSubjects[subject] || (Object.keys(groupedQuestions).length <= 3 && expandedSubjects[subject] === undefined);
+                const totalSubjects = Object.keys(groupedQuestions).length;
+                const isExpandedByDefault = totalSubjects <= 3;
+                const opened = expandedSubjects[subject] ?? isExpandedByDefault;
 
                 return (
                     <div key={subject} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-200">
-                        {/* Summary / Header */}
                         <div
-                            onClick={() => toggleSubject(subject)}
+                            onClick={() => toggleSubject(subject, opened)}
                             className="flex items-center justify-between p-4 bg-slate-50 cursor-pointer hover:bg-slate-100 transition border-b border-transparent data-[state=open]:border-slate-200"
                             data-state={opened ? "open" : "closed"}
                         >
@@ -197,6 +196,12 @@ export default function QuestionList({ questions }: { questions: Question[] }) {
                                                     <td className="p-4 align-top text-slate-700">
                                                         {isEditing ? (
                                                             <div className="space-y-3 p-1">
+                                                                <input
+                                                                    defaultValue={q.topic || ""}
+                                                                    onChange={(e) => setEditForm(prev => ({ ...prev, topic: e.target.value }))}
+                                                                    placeholder="Tema / Etiqueta (opcional)"
+                                                                    className="w-full sm:w-1/2 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white shadow-sm font-medium text-slate-700"
+                                                                />
                                                                 <textarea
                                                                     defaultValue={q.statement}
                                                                     onChange={(e) => setEditForm(prev => ({ ...prev, statement: e.target.value }))}
@@ -230,6 +235,11 @@ export default function QuestionList({ questions }: { questions: Question[] }) {
                                                             </div>
                                                         ) : (
                                                             <div className="pt-0.5">
+                                                                {q.topic && (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-600 font-medium text-xs mb-2 border border-indigo-100/50">
+                                                                        <Tag className="w-3 h-3" /> {q.topic}
+                                                                    </span>
+                                                                )}
                                                                 <p className="font-medium line-clamp-3 group-hover:text-slate-900 transition-colors leading-relaxed">{q.statement}</p>
                                                                 {/* Options Preview */}
                                                                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-sm text-slate-500">

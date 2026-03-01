@@ -1,5 +1,8 @@
-import { redirect } from "next/navigation";
+import { auth } from "@/../auth";
+import LandingClient from "@/components/landing/LandingClient";
 
-export default function Home() {
-  redirect("/exam");
+export default async function Home() {
+  const session = await auth();
+
+  return <LandingClient session={session} />;
 }

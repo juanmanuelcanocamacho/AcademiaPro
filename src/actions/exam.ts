@@ -1,27 +1,50 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { auth } from "@/../auth";
 
 export async function getSubjects() {
     try {
-        const subjects = await prisma.question.findMany({
-            select: { subject: true },
-            distinct: ["subject"],
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+
+        const raw = await prisma.question.findMany({
+            where: { userId: session.user.id },
+            select: { subject: true, topic: true },
+            distinct: ["subject", "topic"],
         });
+
+        const map = new Map<string, Set<string>>();
+        raw.forEach(r => {
+            if (!map.has(r.subject)) map.set(r.subject, new Set());
+            if (r.topic) map.get(r.subject)!.add(r.topic);
+        });
+
+        const subjectsWithTopics = Array.from(map.entries()).map(([sub, tops]) => ({
+            subject: sub,
+            topics: Array.from(tops).sort(),
+        })).sort((a, b) => a.subject.localeCompare(b.subject));
 
         return {
             success: true,
-            subjects: subjects.map((s) => s.subject).sort(),
+            subjects: subjectsWithTopics.map((s) => s.subject), // For backwards compatibility
+            subjectsWithTopics,
         };
     } catch (error) {
         return { success: false, error: "Failed to fetch subjects" };
     }
 }
 
-export async function generateExamBySubject(subject: string, limit: number = 20, randomQ: boolean = true) {
+export async function generateExamBySubject(subject: string, limit: number = 20, randomQ: boolean = true, topic?: string) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+
+        const whereClause: any = { subject, userId: session.user.id };
+        if (topic) whereClause.topic = topic;
+
         const questions = await prisma.question.findMany({
-            where: { subject },
+            where: whereClause,
         });
 
         let selected = questions;

@@ -3,7 +3,7 @@ import ExamModeSelector from "@/components/ExamModeSelector";
 import { LayoutGrid } from "lucide-react";
 
 export default async function ExamIndexPage() {
-    const { subjects = [] } = await getSubjects();
+    const { subjectsWithTopics = [] } = await getSubjects();
 
     return (
         <div className="p-8">
@@ -16,7 +16,7 @@ export default async function ExamIndexPage() {
                 </div>
             </div>
 
-            <ExamModeSelector subjects={subjects} />
+            <ExamModeSelector subjectsWithTopics={subjectsWithTopics} />
         </div>
     );
 }

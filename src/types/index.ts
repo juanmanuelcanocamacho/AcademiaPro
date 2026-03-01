@@ -7,4 +7,6 @@ export interface Question {
     optionC: string;
     optionD: string;
     correctOption: number;
+    topic?: string | null;
+    userId?: string | null;
 }

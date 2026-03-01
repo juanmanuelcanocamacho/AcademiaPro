@@ -15,6 +15,7 @@ export default function BulkImportPDFForm() {
     const [isImporting, setIsImporting] = useState(false);
     const [previewQuestions, setPreviewQuestions] = useState<Partial<Question>[] | null>(null);
     const [subject, setSubject] = useState("");
+    const [topic, setTopic] = useState("");
     const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
 
     useEffect(() => {
@@ -61,10 +62,11 @@ export default function BulkImportPDFForm() {
 
         setIsImporting(true);
         try {
-            // Add the written subject
+            // Add the written subject and topic
             const questionsToImport = previewQuestions.map(q => ({
                 ...q,
-                subject
+                subject,
+                topic: topic.trim() || null
             })) as Omit<Question, "id">[];
 
             const res = await importQuestions(questionsToImport);
@@ -143,21 +145,34 @@ export default function BulkImportPDFForm() {
                             <button onClick={() => setPreviewQuestions(null)} className="ml-auto text-sm font-bold underline hover:text-emerald-900">Subir otro</button>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold text-gray-700">Materia / Asignatura a las que pertenecen:</label>
-                            <input
-                                type="text"
-                                list="subject-suggestions"
-                                value={subject}
-                                onChange={(e) => setSubject(e.target.value)}
-                                placeholder="Ej: Seguridad Informática, Bases de Datos, etc."
-                                className="w-full border border-gray-300 rounded-xl p-3 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-sm font-medium transition"
-                            />
-                            <datalist id="subject-suggestions">
-                                {availableSubjects.map((sub, idx) => (
-                                    <option key={idx} value={sub} />
-                                ))}
-                            </datalist>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700">Materia / Asignatura:</label>
+                                <input
+                                    type="text"
+                                    list="subject-suggestions"
+                                    value={subject}
+                                    onChange={(e) => setSubject(e.target.value)}
+                                    placeholder="Ej: Seguridad Informática..."
+                                    className="w-full border border-gray-300 rounded-xl p-3 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-sm font-medium transition"
+                                />
+                                <datalist id="subject-suggestions">
+                                    {availableSubjects.map((sub, idx) => (
+                                        <option key={idx} value={sub} />
+                                    ))}
+                                </datalist>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-gray-700">Tema / Etiqueta <span className="text-gray-400 font-normal">(Opcional)</span>:</label>
+                                <input
+                                    type="text"
+                                    value={topic}
+                                    onChange={(e) => setTopic(e.target.value)}
+                                    placeholder="Ej: Tema 1, AWS..."
+                                    className="w-full border border-gray-300 rounded-xl p-3 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-sm font-medium transition"
+                                />
+                            </div>
                         </div>
 
                         <div className="bg-gray-50 border border-gray-200 rounded-xl max-h-64 overflow-y-auto p-4 space-y-4">

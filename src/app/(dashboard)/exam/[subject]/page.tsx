@@ -9,17 +9,18 @@ export default async function SubjectExamPage({
     searchParams,
 }: {
     params: Promise<{ subject: string }>;
-    searchParams: Promise<{ mode?: string; randomQ?: string; randomA?: string }>;
+    searchParams: Promise<{ mode?: string; randomQ?: string; randomA?: string; topic?: string }>;
 }) {
     const { subject: rawSubject } = await params;
-    const { mode, randomQ: rq, randomA: ra } = await searchParams;
+    const { mode, randomQ: rq, randomA: ra, topic: rawTopic } = await searchParams;
 
     const subject = decodeURIComponent(rawSubject);
+    const topic = rawTopic ? decodeURIComponent(rawTopic) : undefined;
     const isRepaso = mode === "repaso";
     const randomQ = rq !== "false";
     const randomA = ra === "true";
 
-    let { questions = [] } = await generateExamBySubject(subject, 1000, randomQ);
+    let { questions = [] } = await generateExamBySubject(subject, 1000, randomQ, topic);
 
     // Shuffle answer options if randomA
     if (randomA) {
@@ -52,8 +53,10 @@ export default async function SubjectExamPage({
             </Link>
 
             <div className="mb-8">
-                <h1 className="text-2xl font-black text-gray-900 tracking-tight">{subject}</h1>
-                <p className="text-gray-400 text-sm mt-1">
+                <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+                    {subject} {topic && <span className="text-indigo-600 font-bold ml-2 text-xl bg-indigo-50 px-3 py-1 rounded-lg">/ {topic}</span>}
+                </h1>
+                <p className="text-gray-400 text-sm mt-2">
                     {isRepaso
                         ? `Modo Repaso · ${questions.length} preguntas`
                         : `Modo Examen · ${questions.length} preguntas`}

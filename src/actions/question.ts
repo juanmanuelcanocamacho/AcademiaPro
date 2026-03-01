@@ -3,16 +3,23 @@
 import prisma from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { Question } from "@/types";
+import { auth } from "@/../auth";
 
-export async function getQuestions(page: number = 1, limit: number = 50, search?: string, subject?: string) {
+export async function getQuestions(page: number = 1, limit: number = 50, search?: string, subject?: string, topic?: string) {
     try {
-        const whereClause: any = {};
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+
+        const whereClause: any = { userId: session.user.id };
 
         if (search) {
             whereClause.statement = { contains: search };
         }
         if (subject) {
             whereClause.subject = subject;
+        }
+        if (topic) {
+            whereClause.topic = topic;
         }
 
         const questions = await prisma.question.findMany({
@@ -35,10 +42,16 @@ export async function getQuestions(page: number = 1, limit: number = 50, search?
     }
 }
 
-export async function createQuestion(data: Omit<Question, "id">) {
+export async function createQuestion(data: Omit<Question, "id" | "userId">) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+
         await prisma.question.create({
-            data,
+            data: {
+                ...data,
+                userId: session.user.id
+            },
         });
         revalidatePath("/admin");
         return { success: true };
@@ -49,8 +62,11 @@ export async function createQuestion(data: Omit<Question, "id">) {
 
 export async function deleteQuestion(id: string) {
     try {
-        await prisma.question.delete({
-            where: { id },
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+
+        await prisma.question.deleteMany({
+            where: { id, userId: session.user.id },
         });
         revalidatePath("/admin");
         return { success: true };
@@ -59,12 +75,18 @@ export async function deleteQuestion(id: string) {
     }
 }
 
-export async function updateQuestion(id: string, data: Partial<Omit<Question, "id">>) {
+export async function updateQuestion(id: string, data: Partial<Omit<Question, "id" | "userId">>) {
     try {
-        await prisma.question.update({
-            where: { id },
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+
+        const result = await prisma.question.updateMany({
+            where: { id, userId: session.user.id },
             data,
         });
+
+        if (result.count === 0) throw new Error("Not found or unauthorized");
+
         revalidatePath("/admin");
         return { success: true };
     } catch (error) {
@@ -74,9 +96,13 @@ export async function updateQuestion(id: string, data: Partial<Omit<Question, "i
 
 export async function deleteQuestions(ids: string[]) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+
         await prisma.question.deleteMany({
             where: {
-                id: { in: ids }
+                id: { in: ids },
+                userId: session.user.id
             }
         });
         revalidatePath("/admin");
@@ -86,10 +112,18 @@ export async function deleteQuestions(ids: string[]) {
     }
 }
 
-export async function importQuestions(questions: Omit<Question, "id">[]) {
+export async function importQuestions(questions: Omit<Question, "id" | "userId">[]) {
     try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+
+        const dataWithUser = questions.map(q => ({
+            ...q,
+            userId: session.user.id
+        }));
+
         await prisma.question.createMany({
-            data: questions,
+            data: dataWithUser,
         });
         revalidatePath("/admin");
         return { success: true, count: questions.length };
@@ -100,8 +134,12 @@ export async function importQuestions(questions: Omit<Question, "id">[]) {
 
 export async function getSubjectStats() {
     try {
+        const session = await auth();
+        if (!session?.user?.id) throw new Error("Unauthorized");
+
         const stats = await prisma.question.groupBy({
             by: ['subject'],
+            where: { userId: session.user.id },
             _count: {
                 id: true
             },

@@ -2,10 +2,33 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle, ArrowRight, RotateCcw, Trophy, CircleHelp } from "lucide-react";
 import { Question } from "@/types";
 
-export default function ReviewForm({ questions, subject }: { questions: Question[]; subject: string }) {
+export default function ReviewForm({ questions: initialQuestions, subject }: { questions: Question[]; subject: string }) {
+    const searchParams = useSearchParams();
+    const randomQ = searchParams.get("randomQ") !== "false";
+    const randomA = searchParams.get("randomA") === "true";
+
+    const shuffleQuestions = (qs: Question[]) => {
+        let result = [...qs];
+        if (randomQ) result.sort(() => Math.random() - 0.5);
+        if (randomA) {
+            result = result.map(q => {
+                const pairs = [
+                    { text: q.optionA, correct: q.correctOption === 0 },
+                    { text: q.optionB, correct: q.correctOption === 1 },
+                    { text: q.optionC, correct: q.correctOption === 2 },
+                    { text: q.optionD, correct: q.correctOption === 3 },
+                ].sort(() => Math.random() - 0.5);
+                return { ...q, optionA: pairs[0].text, optionB: pairs[1].text, optionC: pairs[2].text, optionD: pairs[3].text, correctOption: pairs.findIndex((p) => p.correct) } as Question;
+            });
+        }
+        return result;
+    };
+
+    const [questions, setQuestions] = useState(initialQuestions);
     const [index, setIndex] = useState(0);
     const [answers, setAnswers] = useState<Record<string, number>>({});
     const [correct, setCorrect] = useState(0);
@@ -35,8 +58,8 @@ export default function ReviewForm({ questions, subject }: { questions: Question
 
     useEffect(() => {
         if (!mounted || promptResume) return;
-        localStorage.setItem(storageKey, JSON.stringify({ index, answers, correct, done }));
-    }, [index, answers, correct, done, mounted, promptResume, storageKey]);
+        localStorage.setItem(storageKey, JSON.stringify({ questions, index, answers, correct, done }));
+    }, [questions, index, answers, correct, done, mounted, promptResume, storageKey]);
 
 
 
@@ -100,6 +123,7 @@ export default function ReviewForm({ questions, subject }: { questions: Question
                         Empezar de cero
                     </button>
                     <button onClick={() => {
+                        if (tempSavedData.questions) setQuestions(tempSavedData.questions);
                         if (tempSavedData.index !== undefined) setIndex(tempSavedData.index);
                         if (tempSavedData.answers) setAnswers(tempSavedData.answers);
                         if (tempSavedData.correct !== undefined) setCorrect(tempSavedData.correct);
@@ -149,16 +173,28 @@ export default function ReviewForm({ questions, subject }: { questions: Question
                             <p className="text-3xl font-black text-indigo-600">{pct}<span className="text-gray-300 text-xl font-bold">%</span></p>
                         </div>
                     </div>
-                    <div className="flex gap-3 justify-center">
-                        <Link href="/exam" className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition">
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
+                        <Link href="/exam" className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition flex items-center justify-center">
                             Asignaturas
                         </Link>
+
+                        {correct < total && (
+                            <button onClick={() => {
+                                const failed = questions.filter(q => answers[q.id] !== q.correctOption);
+                                setQuestions(shuffleQuestions(failed));
+                                reset();
+                                localStorage.removeItem(storageKey);
+                            }} className="px-6 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-xl text-sm transition flex items-center justify-center gap-2">
+                                <RotateCcw className="w-4 h-4" /> Repetir falladas ({total - correct})
+                            </button>
+                        )}
+
                         <button onClick={() => {
+                            setQuestions(shuffleQuestions(initialQuestions));
                             reset();
                             localStorage.removeItem(storageKey);
-                            window.location.reload();
-                        }} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition flex items-center gap-2">
-                            <RotateCcw className="w-4 h-4" /> Repetir
+                        }} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center gap-2">
+                            <RotateCcw className="w-4 h-4" /> Repetir todas
                         </button>
                     </div>
                 </div>

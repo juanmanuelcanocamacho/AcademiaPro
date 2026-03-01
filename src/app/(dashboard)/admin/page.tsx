@@ -25,7 +25,7 @@ export default async function AdminPage(
     const { questions = [], totalPages = 1, total = 0 } = questionsRes;
     const stats = statsRes.stats || [];
     const uniqueSubjects = stats.length;
-    const totalQuestionsGlobal = stats.reduce((acc, curr) => acc + curr._count.id, 0);
+    const totalQuestionsGlobal = stats.reduce((acc, curr) => acc + ((curr._count as any).id || 0), 0);
 
     return (
         <div className="p-8 max-w-6xl mx-auto space-y-8">
@@ -74,12 +74,13 @@ export default async function AdminPage(
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Distribución Base de Datos</p>
                     <div className="flex gap-1 h-8 items-end">
                         {stats.slice(0, 10).map((s, i) => {
-                            const max = stats[0]?._count.id || 1;
-                            const height = Math.max((s._count.id / max) * 100, 10);
+                            const max = (stats[0]?._count as any)?.id || 1;
+                            const count = (s._count as any).id || 0;
+                            const height = Math.max((count / max) * 100, 10);
                             return (
-                                <div key={s.subject} title={`${s.subject}: ${s._count.id}`} className="flex-1 bg-indigo-100 hover:bg-indigo-500 rounded-t-sm transition-all cursor-crosshair group relative" style={{ height: `${height}%` }}>
+                                <div key={s.subject} title={`${s.subject}: ${count}`} className="flex-1 bg-indigo-100 hover:bg-indigo-500 rounded-t-sm transition-all cursor-crosshair group relative" style={{ height: `${height}%` }}>
                                     <div className="hidden group-hover:block absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] py-1 px-2 rounded font-bold whitespace-nowrap z-10 pointer-events-none">
-                                        {s.subject}: {s._count.id}
+                                        {s.subject}: {count}
                                     </div>
                                 </div>
                             );
@@ -108,7 +109,7 @@ export default async function AdminPage(
                         className="w-full pl-11 pr-8 py-2 bg-gray-50 hover:bg-gray-100 border border-transparent focus:border-indigo-300 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 rounded-lg outline-none transition text-sm font-medium appearance-none cursor-pointer"
                     >
                         <option value="">Todas las asignaturas</option>
-                        {stats.map(s => <option key={s.subject} value={s.subject}>{s.subject} ({s._count.id})</option>)}
+                        {stats.map(s => <option key={s.subject} value={s.subject}>{s.subject} ({(s._count as any).id || 0})</option>)}
                     </select>
                 </div>
                 <button type="submit" className="w-full sm:w-auto px-6 py-2 bg-gray-900 hover:bg-indigo-600 text-white font-bold rounded-lg text-sm transition">

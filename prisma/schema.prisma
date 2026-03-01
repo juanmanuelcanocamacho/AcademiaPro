@@ -19,6 +19,79 @@ model Question {
   optionD       String   // Opción D
   correctOption Int      // Índice de respuesta correcta (0 para A, 1 para B, 2 para C, 3 para D)
   subject       String   // Módulo/Asignatura
+  topic         String?  // Sub-tema o etiqueta opcional
+  userId        String?  // Propietario de la pregunta (null = del sistema viejo)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // Hashed password para credentials
+  role          String    @default("STUDENT")
+  accounts      Account[]
+  sessions      Session[]
+  questions     Question[]
+  sharedSubjects SharedSubject[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model SharedSubject {
+  id        String   @id @default(cuid())
+  subject   String   // Nombre de la asignatura
+  adminId   String   // ID del Admin que la comparte
+  createdAt DateTime @default(now())
+
+  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@unique([subject, adminId])
 }
