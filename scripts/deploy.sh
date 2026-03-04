@@ -16,7 +16,7 @@ docker compose up -d --build
 
 # 3. Initialize or update the database schema
 echo "🗄️ Actualizando esquemas de la base de datos PostgreSQL..."
-docker compose exec app npx prisma db push
+docker compose exec app npx --yes prisma db push --accept-data-loss
 
 # 4. Clean up old unused images to save disk space on Arsys
 echo "🧹 Limpiando imágenes antiguas sin usar..."
