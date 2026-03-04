@@ -21,6 +21,8 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Run Prisma generate and then build the project
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
 RUN npx prisma generate
 RUN npm run build
 
@@ -48,6 +50,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # We also need the prisma folder for the client at runtime if we run migrations
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 
 USER nextjs
 
@@ -56,4 +59,4 @@ ENV PORT=3001
 ENV HOSTNAME="0.0.0.0"
 
 # Run Prisma deploy on start and start the server
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+CMD ["node", "server.js"]
