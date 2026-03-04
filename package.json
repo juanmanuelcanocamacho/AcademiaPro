@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
+    "dev:db": "docker compose up db -d && next dev -p 3001",
+    "db:push": "docker compose exec app npx prisma db push",
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint"
@@ -12,18 +14,14 @@
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-
     "next-auth": "^5.0.0-beta.30",
     "@auth/prisma-adapter": "^2.11.1",
-
     "@prisma/client": "^7.4.2",
     "prisma": "^7.4.2",
     "@prisma/adapter-pg": "^7.4.2",
     "pg": "^8.19.0",
-
     "@ai-sdk/openai": "^3.0.36",
     "ai": "^6.0.104",
-
     "bcryptjs": "^3.0.3",
     "framer-motion": "^12.34.3",
     "lucide-react": "^0.575.0",
