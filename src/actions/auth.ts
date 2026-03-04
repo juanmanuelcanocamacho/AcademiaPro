@@ -67,8 +67,9 @@ export async function register(data: any) {
         });
 
         return { success: true };
-    } catch (error) {
-        return { error: "Error al registrar el usuario" };
+    } catch (error: any) {
+        console.error("REGISTER ERROR:", error);
+        return { error: `Error interno al registrar: ${error?.message || "Desconocido"}` };
     }
 }
 
