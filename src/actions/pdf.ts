@@ -19,12 +19,52 @@ export async function parseMoodlePDF(formData: FormData) {
                 const arrayBuffer = await file.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
 
-                // Parsing the raw text from the PDF
-                const data = await pdfParse(buffer);
+                const render_page = async (pageData: any) => {
+                    const render_options = { normalizeWhitespace: false, disableCombineTextItems: false };
+                    const textContent = await pageData.getTextContent(render_options);
+                    let lastY, text = '';
+                    for (let item of textContent.items) {
+                        let fontPrefix = `[${item.fontName}]`;
+                        let str = item.str;
+
+                        if (lastY == item.transform[5] || !lastY) {
+                            text += str;
+                        } else {
+                            text += '\n' + fontPrefix + ' ' + str;
+                        }
+                        lastY = item.transform[5];
+                    }
+                    return text;
+                };
+
+                // Parsing the raw text from the PDF with our custom renderer
+                const data = await pdfParse(buffer, { pagerender: render_page });
                 let text = data.text;
+
+                // Pre-procesador determinista: Buscar de forma matemática cuál es la fuente que se usa para la respuesta correcta 
+                // (la fuente en negrita aparece muchas menos veces en las opciones que la fuente normal).
+                const optionFontRegex = /\[(.*?)\]\s*[a-d]\./ig;
+                let match;
+                const fontCounts: Record<string, number> = {};
+
+                while ((match = optionFontRegex.exec(text)) !== null) {
+                    const font = match[1];
+                    fontCounts[font] = (fontCounts[font] || 0) + 1;
+                }
+
+                // La fuente normal será la que tiene muchos matches. La fuente de las correctas será la que tiene menos.
+                const fonts = Object.keys(fontCounts).sort((a, b) => fontCounts[a] - fontCounts[b]);
+                if (fonts.length >= 2) {
+                    const rareFont = fonts[0]; // The font used the least for options (bold)
+                    // Reemplazamos esa etiqueta específica por un chivato explícito para la IA
+                    text = text.replace(new RegExp(`\\[${rareFont}\\]`, 'g'), '[ESTA ES LA RESPUESTA CORRECTA]');
+                }
 
                 // Give the AI only the first 15000 characters just in case it's a massive PDF
                 text = text.substring(0, 15000);
+
+                console.log("=== EXTRACTION PREVIEW ===");
+                console.log(text.substring(0, 1500)); // Log the first 1500 chars to see what it looks like
 
                 // Using OpenAI to intelligently extract the questions
                 const { object } = await generateObject({
@@ -36,7 +76,7 @@ export async function parseMoodlePDF(formData: FormData) {
                             optionB: z.string().describe("El texto exclusivo de la opción B, sin incluir la letra 'B.'."),
                             optionC: z.string().describe("El texto exclusivo de la opción C, sin incluir la letra 'C.'. Si no hay, usa '-'."),
                             optionD: z.string().describe("El texto exclusivo de la opción D, sin incluir la letra 'D.'. Si no hay, usa '-'."),
-                            correctOption: z.number().describe("Un número entre 0 y 3 que representa la opción correcta (0 para A, 1 para B, 2 para C, 3 para D). Basado en el texto 'La respuesta correcta es: ' que suele aparecer al final de cada bloque.")
+                            correctOption: z.number().describe("Un número entre 0 y 3 que representa la opción correcta (0 para A, 1 para B, 2 para C, 3 para D). Localiza cuál de las opciones tiene la etiqueta [ESTA ES LA RESPUESTA CORRECTA] al principio.")
                         }))
                     }),
                     prompt: `
@@ -46,7 +86,11 @@ export async function parseMoodlePDF(formData: FormData) {
                     Tu trabajo es limpiar analíticamente este texto y devolverme un array con las preguntas perfectas.
                     Ignora absolutamente todo el texto que no pertenezca estrictamente al enunciado de una pregunta o a sus respuestas.
                     Si el formato carece de algunas opciones C o D, utiliza el carácter '-' como placeholder literal.
-                    Identifica cuál es la respuesta correcta usando la pista de Moodle, y mapea la correcta traduciéndolo a su índice numérico exacto (0-3).
+                    
+                    ¡MUY IMPORTANTE PARA LA RESPUESTA CORRECTA!:
+                    El pre-procesador ha inyectado el tag literal "[ESTA ES LA RESPUESTA CORRECTA]" justo en la línea de la opción que estaba en negrita en el PDF.
+                    La opción correcta será obligatoria y matemáticamente aquella que contenga o vaya precedida por ese tag.
+                    Mapea la correcta traduciéndolo a su índice numérico exacto (0-3).
                     
                     TEXTO BRUTO DEL PDF:
                     ${text}

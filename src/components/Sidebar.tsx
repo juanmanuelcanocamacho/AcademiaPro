@@ -20,27 +20,30 @@ import { logout } from "@/actions/auth";
 import { useTransition } from "react";
 import type { Session } from "next-auth";
 
-const navItems = [
-    {
-        section: "Estudiante",
-        links: [
-            { name: "Asignaturas", icon: BookOpen, href: "/exam", roles: ["STUDENT", "ADMIN"] },
-            { name: "Banco Oficial (Copiar)", icon: DownloadCloud, href: "/public-bank", roles: ["STUDENT"] },
-        ],
-    },
-    {
-        section: "Administración",
-        links: [
-            { name: "Banco de Preguntas", icon: Database, href: "/admin", roles: ["ADMIN"] },
-            { name: "Añadir / Importar", icon: Plus, href: "/admin/import", roles: ["ADMIN"] },
-            { name: "Compartir Asignaturas", icon: Share2, href: "/admin/share", roles: ["ADMIN"] },
-        ],
-    },
-];
-
-export default function Sidebar({ session }: { session: Session | null }) {
+export default function Sidebar({ session, settings }: { session: Session | null, settings?: any }) {
     const pathname = usePathname();
     const [isPending, startTransition] = useTransition();
+    const userRole = session?.user?.role || "STUDENT";
+
+    const navItems = [
+        {
+            section: "Estudiante",
+            links: [
+                { name: "Asignaturas", icon: BookOpen, href: "/exam", roles: ["STUDENT", "ADMIN"] },
+                ...(settings?.allowPublicBank !== false ? [{ name: "Banco Oficial (Copiar)", icon: DownloadCloud, href: "/public-bank", roles: ["STUDENT"] }] : []),
+                ...(settings?.allowStudentImport === true ? [{ name: "Añadir / Importar", icon: Plus, href: "/admin/import", roles: ["STUDENT"] }] : []),
+            ],
+        },
+        {
+            section: "Administración",
+            links: [
+                { name: "Banco de Preguntas", icon: Database, href: "/admin", roles: ["ADMIN"] },
+                { name: "Añadir / Importar", icon: Plus, href: "/admin/import", roles: ["ADMIN"] },
+                { name: "Compartir Asignaturas", icon: Share2, href: "/admin/share", roles: ["ADMIN"] },
+                { name: "Ajustes Globales", icon: Settings, href: "/admin/settings", roles: ["ADMIN"] },
+            ],
+        },
+    ];
 
 
 
@@ -49,10 +52,9 @@ export default function Sidebar({ session }: { session: Session | null }) {
         if (href === "/admin") return pathname === "/admin";
         if (href === "/admin/import") return pathname.startsWith("/admin/import") || pathname.startsWith("/admin/new");
         if (href === "/admin/share") return pathname.startsWith("/admin/share");
+        if (href === "/admin/settings") return pathname.startsWith("/admin/settings");
         return pathname.startsWith(href);
     };
-
-    const userRole = session?.user?.role || "STUDENT";
 
     return (
         <aside className="sticky top-0 h-screen shrink-0 w-60 bg-white border-r border-gray-100 flex flex-col z-50 select-none">
@@ -63,21 +65,24 @@ export default function Sidebar({ session }: { session: Session | null }) {
                 </div>
                 <div>
                     <span className="font-black text-gray-900 text-base tracking-tight leading-none">Testly</span>
-                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">Portal del Estudiante</p>
+                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">Estudia con Testly</p>
                 </div>
             </Link>
 
             {/* Navigation */}
             <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-5">
-                {navItems.map((group) => (
-                    <div key={group.section}>
-                        <p className="px-2 mb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                            {group.section}
-                        </p>
-                        <div className="flex flex-col gap-0.5">
-                            {group.links
-                                .filter((item) => !item.roles || item.roles.includes(userRole))
-                                .map((item) => (
+                {navItems.map((group) => {
+                    const filteredLinks = group.links.filter((item) => !item.roles || item.roles.includes(userRole));
+
+                    if (filteredLinks.length === 0) return null;
+
+                    return (
+                        <div key={group.section}>
+                            <p className="px-2 mb-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                {group.section}
+                            </p>
+                            <div className="flex flex-col gap-0.5">
+                                {filteredLinks.map((item) => (
                                     <Link
                                         key={item.href}
                                         href={item.href}
@@ -90,9 +95,10 @@ export default function Sidebar({ session }: { session: Session | null }) {
                                         {item.name}
                                     </Link>
                                 ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </nav>
 
             {/* User footer */}

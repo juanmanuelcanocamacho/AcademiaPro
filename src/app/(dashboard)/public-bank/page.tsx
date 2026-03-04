@@ -1,6 +1,9 @@
 import { getPublicSubjectStats } from "@/actions/public-bank";
 import PublicSubjectList from "@/components/PublicSubjectList";
 import { Database, BookOpen } from "lucide-react";
+import { auth } from "@/../auth";
+import { getSystemSettings } from "@/actions/settings";
+import { redirect } from "next/navigation";
 
 export const metadata = {
     title: "Banco Maestro Oficial",
@@ -12,6 +15,13 @@ export default async function PublicBankPage(
     }
 ) {
     const searchParams = await props.searchParams;
+    const session = await auth();
+    const settings = await getSystemSettings();
+
+    if (session?.user?.role !== "ADMIN" && !settings.allowPublicBank) {
+        redirect("/exam");
+    }
+
     const statsRes = await getPublicSubjectStats();
 
     const stats = statsRes.stats || [];

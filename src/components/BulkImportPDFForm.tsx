@@ -13,7 +13,7 @@ export default function BulkImportPDFForm() {
     const [files, setFiles] = useState<File[]>([]);
     const [isParsing, setIsParsing] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
-    const [previewQuestions, setPreviewQuestions] = useState<Partial<Question>[] | null>(null);
+    const [previewQuestions, setPreviewQuestions] = useState<any[] | null>(null);
     const [subject, setSubject] = useState("");
     const [topic, setTopic] = useState("");
     const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
@@ -57,6 +57,12 @@ export default function BulkImportPDFForm() {
     const handleImport = async () => {
         if (!previewQuestions || !subject) {
             toast.error("Por favor, asigna una materia antes de importar.");
+            return;
+        }
+
+        const hasUnanswered = previewQuestions.some(q => q.correctOption === undefined || q.correctOption === null || q.correctOption < 0 || q.correctOption > 3);
+        if (hasUnanswered) {
+            toast.error("Hay preguntas sin respuesta correcta seleccionada. Por favor, revisa la vista previa y marca la respuesta correcta.");
             return;
         }
 
@@ -120,19 +126,19 @@ export default function BulkImportPDFForm() {
                         </label>
 
                         {files.length > 0 && (
-                            <div className="bg-indigo-50 text-indigo-700 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between border border-indigo-100 gap-4">
-                                <div className="flex items-center gap-3">
+                            <div className="bg-indigo-50 text-indigo-700 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between border border-indigo-100 gap-4 overflow-hidden w-full">
+                                <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                                     <FileText className="w-5 h-5 flex-shrink-0" />
-                                    <p className="text-sm font-semibold">
+                                    <p className="text-sm font-semibold truncate break-all">
                                         {files.length === 1 ? files[0].name : `${files.length} archivos seleccionados`}
                                     </p>
                                 </div>
                                 <button
                                     onClick={handleParse}
                                     disabled={isParsing}
-                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 whitespace-nowrap"
+                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-sm transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-md shadow-indigo-600/20 whitespace-nowrap flex-shrink-0 w-full sm:w-auto"
                                 >
-                                    {isParsing ? "Procesando con IA..." : "Extraer con IA"} <Sparkles className="w-4 h-4 ml-1" />
+                                    {isParsing ? "Procesando con IA..." : "Extraer con IA"} <Sparkles className="w-4 h-4 ml-1 flex-shrink-0" />
                                 </button>
                             </div>
                         )}
@@ -175,25 +181,64 @@ export default function BulkImportPDFForm() {
                             </div>
                         </div>
 
-                        <div className="bg-gray-50 border border-gray-200 rounded-xl max-h-64 overflow-y-auto p-4 space-y-4">
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest sticky top-0 bg-gray-50 pb-2">Vista Previa de Extracción</p>
-                            {previewQuestions.map((q, i) => (
-                                <div key={i} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 space-y-2">
-                                    <p className="text-sm font-bold text-gray-800"><span className="text-indigo-500 mr-2">{i + 1}.</span>{q.statement}</p>
-                                    <ul className="text-sm text-gray-500 space-y-1">
-                                        <li className={q.correctOption === 0 ? "font-bold text-emerald-600" : ""}>A. {q.optionA}</li>
-                                        <li className={q.correctOption === 1 ? "font-bold text-emerald-600" : ""}>B. {q.optionB}</li>
-                                        <li className={q.correctOption === 2 ? "font-bold text-emerald-600" : ""}>C. {q.optionC}</li>
-                                        <li className={q.correctOption === 3 ? "font-bold text-emerald-600" : ""}>D. {q.optionD}</li>
-                                    </ul>
-                                </div>
-                            ))}
+                        <div className="bg-gray-50 border border-secondary rounded-xl max-h-[600px] overflow-y-auto p-4 space-y-4 relative scrollbar-thin">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between sticky top-0 bg-gray-50/90 backdrop-blur-md pb-2 border-b border-gray-200 mb-4 z-10 w-full gap-2">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-2 sm:mt-0">Vista Previa de Extracción</p>
+                                {previewQuestions.some(q => q.correctOption < 0 || q.correctOption > 3 || q.correctOption === undefined || q.correctOption === null) && (
+                                    <span className="text-[10px] sm:text-xs font-bold text-red-600 bg-red-100 px-2 py-1.5 rounded-md flex items-center gap-1.5 shadow-sm border border-red-200 truncate">
+                                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> REVISA LAS RESPUESTAS FALTANTES
+                                    </span>
+                                )}
+                            </div>
+                            {previewQuestions.map((q, i) => {
+                                const isMissing = q.correctOption < 0 || q.correctOption > 3 || q.correctOption === undefined || q.correctOption === null;
+                                return (
+                                    <div key={i} className={`bg-white p-4 sm:p-5 rounded-xl shadow-sm border transition-all relative ${!isMissing ? 'border-gray-200' : 'border-red-300 ring-4 ring-red-50'}`}>
+                                        {isMissing && (
+                                            <div className="absolute -top-3 -right-2 bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm animate-pulse z-20">
+                                                FALTA MARCAR
+                                            </div>
+                                        )}
+                                        <p className="text-sm font-bold text-gray-800 leading-snug mb-4">
+                                            <span className="text-indigo-500 mr-2">{i + 1}.</span>{q.statement}
+                                        </p>
+                                        <div className="grid grid-cols-1 gap-2 mt-2">
+                                            {[q.optionA, q.optionB, q.optionC, q.optionD].map((opt, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    onClick={() => {
+                                                        const newQ = [...previewQuestions];
+                                                        newQ[i] = { ...newQ[i], correctOption: idx };
+                                                        setPreviewQuestions(newQ);
+                                                    }}
+                                                    className={`cursor-pointer group text-sm p-3 rounded-xl border transition-all flex items-start gap-3 select-none ${q.correctOption === idx
+                                                        ? "bg-emerald-50 border-emerald-400 text-emerald-800 shadow-sm"
+                                                        : "bg-white border-gray-200 text-gray-600 hover:bg-slate-50 hover:border-slate-300"
+                                                        }`}
+                                                >
+                                                    <div className="flex-1 flex gap-2">
+                                                        <span className={`font-bold mt-0.5 ${q.correctOption === idx ? "text-emerald-600" : "text-gray-400"}`}>
+                                                            {['A', 'B', 'C', 'D'][idx]}.
+                                                        </span>
+                                                        <span className="leading-snug">{opt}</span>
+                                                    </div>
+                                                    {q.correctOption === idx ? (
+                                                        <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                                                    ) : (
+                                                        <div className="w-5 h-5 rounded-full border-2 border-slate-200 mt-0.5 flex-shrink-0 group-hover:border-slate-400 transition-colors bg-white" />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )
+                            })}
                         </div>
 
                         <button
                             onClick={handleImport}
-                            disabled={isImporting || !subject.trim()}
-                            className="w-full py-3.5 bg-gray-900 text-white hover:bg-indigo-600 transition tracking-wide font-black rounded-xl disabled:opacity-50"
+                            disabled={isImporting || !subject.trim() || previewQuestions.some(q => q.correctOption < 0 || q.correctOption > 3 || q.correctOption === undefined || q.correctOption === null)}
+                            className="w-full py-4 bg-gray-900 text-white hover:bg-indigo-600 transition tracking-wide font-black rounded-xl disabled:opacity-50 flex justify-center items-center gap-2 shadow-lg hover:shadow-indigo-600/20"
                         >
                             {isImporting ? 'Guardando en Base de Datos...' : `Almacenar estas ${previewQuestions.length} preguntas`}
                         </button>

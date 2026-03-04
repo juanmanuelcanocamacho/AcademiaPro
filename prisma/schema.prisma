@@ -93,5 +93,13 @@ model SharedSubject {
 
   admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
+
   @@unique([subject, adminId])
+}
+
+model SystemSettings {
+  id                    Int      @id @default(1)
+  allowPublicBank       Boolean  @default(true)
+  allowStudentImport    Boolean  @default(false)
+  updatedAt             DateTime @updatedAt
 }
