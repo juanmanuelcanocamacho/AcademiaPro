@@ -14,7 +14,11 @@ git pull origin main
 echo "🐳 Reconstruyendo y reiniciando contenedores Docker..."
 docker compose up -d --build
 
-# 3. Clean up old unused images to save disk space on Arsys
+# 3. Initialize or update the database schema
+echo "🗄️ Actualizando esquemas de la base de datos PostgreSQL..."
+docker compose exec app npx prisma db push
+
+# 4. Clean up old unused images to save disk space on Arsys
 echo "🧹 Limpiando imágenes antiguas sin usar..."
 docker image prune -f
 
