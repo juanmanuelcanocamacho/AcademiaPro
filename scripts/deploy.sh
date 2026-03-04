@@ -3,20 +3,19 @@
 # Stop execution if any command fails
 set -e
 
-echo "🚀 Starting deployment..."
+echo "🚀 Iniciando despliegue en Arsys..."
 
-# Pull the latest changes
-echo "⬇️  Pulling latest changes from git..."
-git pull
+# 1. Pull the latest changes
+echo "⬇️  Descargando últimos cambios de GitHub..."
+git pull origin main
 
-# Build and restart containers using the production configuration
-echo "🐳 Rebuilding and restarting containers..."
+# 2. Build and restart containers using the production configuration
+# Note: The Dockerfile already runs 'npx prisma migrate deploy' on startup!
+echo "🐳 Reconstruyendo y reiniciando contenedores Docker..."
 docker compose up -d --build
 
-# Run database migrations
-echo "🗄️  Running database migrations..."
-# We use the specific migrate service instead of exec-ing into app
-# This avoids npx installing an incompatible Prisma version
-docker compose run --rm migrate
+# 3. Clean up old unused images to save disk space on Arsys
+echo "🧹 Limpiando imágenes antiguas sin usar..."
+docker image prune -f
 
-echo "✅ Deployment completed successfully!"
+echo "✅ ¡Despliegue completado con éxito! Tu aplicación está corriendo en el puerto 3001."
