@@ -1,4 +1,4 @@
-import Sidebar from "@/components/Sidebar";
+import SidebarWrapper from "@/components/SidebarWrapper";
 import { auth } from "@/../auth";
 import { getSystemSettings } from "@/actions/settings";
 
@@ -11,9 +11,9 @@ export default async function DashboardLayout({
     const settings = await getSystemSettings();
 
     return (
-        <div className="flex min-h-screen">
-            <Sidebar session={session} settings={settings} />
-            <main className="flex-1 min-h-screen overflow-y-auto w-full">
+        <div className="flex h-[100dvh] overflow-hidden bg-gray-50/30">
+            <SidebarWrapper session={session} settings={settings} />
+            <main className="flex-1 overflow-y-auto w-full relative pt-14 md:pt-0">
                 {children}
             </main>
         </div>
