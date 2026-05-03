@@ -24,7 +24,11 @@ export async function getQuestions(page: number = 1, limit: number = 50, search?
 
         const questions = await prisma.question.findMany({
             where: whereClause,
-            orderBy: { createdAt: "desc" },
+            orderBy: [
+                { createdAt: "desc" },
+                { subject: "asc" },
+                { topic: "asc" }
+            ],
             skip: (page - 1) * limit,
             take: limit,
         });

@@ -1,21 +1,27 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Upload, CheckCircle2, AlertCircle, FileText, ChevronRight, Sparkles } from "lucide-react";
+import { Upload, CheckCircle2, AlertCircle, FileText, Sparkles } from "lucide-react";
 import { parseMoodlePDF } from "@/actions/pdf";
 import { importQuestions, getSubjectStats } from "@/actions/question";
 import { Question } from "@/types";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
+type ParsedFile = {
+    fileName: string;
+    subject: string;
+    topic: string;
+    questions: any[];
+};
+
 export default function BulkImportPDFForm() {
     const router = useRouter();
     const [files, setFiles] = useState<File[]>([]);
     const [isParsing, setIsParsing] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
-    const [previewQuestions, setPreviewQuestions] = useState<any[] | null>(null);
-    const [subject, setSubject] = useState("");
-    const [topic, setTopic] = useState("");
+    const [parsedFiles, setParsedFiles] = useState<ParsedFile[] | null>(null);
+    const [activeTab, setActiveTab] = useState(0);
     const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
 
     useEffect(() => {
@@ -29,7 +35,8 @@ export default function BulkImportPDFForm() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
             setFiles(Array.from(e.target.files));
-            setPreviewQuestions(null);
+            setParsedFiles(null);
+            setActiveTab(0);
         }
     };
 
@@ -41,9 +48,18 @@ export default function BulkImportPDFForm() {
             files.forEach(file => formData.append("file", file));
 
             const res = await parseMoodlePDF(formData);
-            if (res.success && res.questions) {
-                setPreviewQuestions(res.questions);
-                toast.success(`Se han extraído ${res.questions.length} preguntas correctamente.`);
+            if (res.success && res.results) {
+                const newParsedFiles = res.results.map((r: any) => ({
+                    fileName: r.fileName,
+                    subject: "",
+                    topic: "",
+                    questions: r.questions
+                }));
+                setParsedFiles(newParsedFiles);
+                setActiveTab(0);
+                
+                const totalQs = newParsedFiles.reduce((acc: number, f: ParsedFile) => acc + f.questions.length, 0);
+                toast.success(`Se han extraído ${totalQs} preguntas de ${newParsedFiles.length} archivos.`);
             } else {
                 toast.error(res.error || "No se pudo extraer las preguntas del PDF.");
             }
@@ -54,26 +70,67 @@ export default function BulkImportPDFForm() {
         }
     };
 
+    const updateParsedFile = (index: number, updates: Partial<ParsedFile>) => {
+        if (!parsedFiles) return;
+        const newFiles = [...parsedFiles];
+        newFiles[index] = { ...newFiles[index], ...updates };
+        setParsedFiles(newFiles);
+    };
+
+    const updateQuestion = (fileIndex: number, questionIndex: number, newCorrectOption: number) => {
+        if (!parsedFiles) return;
+        const newFiles = [...parsedFiles];
+        const newQuestions = [...newFiles[fileIndex].questions];
+        newQuestions[questionIndex] = { ...newQuestions[questionIndex], correctOption: newCorrectOption };
+        newFiles[fileIndex].questions = newQuestions;
+        setParsedFiles(newFiles);
+    };
+
     const handleImport = async () => {
-        if (!previewQuestions || !subject) {
-            toast.error("Por favor, asigna una materia antes de importar.");
+        if (!parsedFiles) return;
+
+        // Validations
+        let missingSubjectFile = null;
+        let missingAnswerFile = null;
+
+        for (let i = 0; i < parsedFiles.length; i++) {
+            const file = parsedFiles[i];
+            if (!file.subject.trim()) {
+                missingSubjectFile = file.fileName;
+                setActiveTab(i);
+                break;
+            }
+            const hasUnanswered = file.questions.some(q => q.correctOption === undefined || q.correctOption === null || q.correctOption < 0 || q.correctOption > 3);
+            if (hasUnanswered) {
+                missingAnswerFile = file.fileName;
+                setActiveTab(i);
+                break;
+            }
+        }
+
+        if (missingSubjectFile) {
+            toast.error(`Falta asignar una materia para el archivo: ${missingSubjectFile}`);
             return;
         }
 
-        const hasUnanswered = previewQuestions.some(q => q.correctOption === undefined || q.correctOption === null || q.correctOption < 0 || q.correctOption > 3);
-        if (hasUnanswered) {
-            toast.error("Hay preguntas sin respuesta correcta seleccionada. Por favor, revisa la vista previa y marca la respuesta correcta.");
+        if (missingAnswerFile) {
+            toast.error(`Hay preguntas sin respuesta en el archivo: ${missingAnswerFile}`);
             return;
         }
 
         setIsImporting(true);
         try {
-            // Add the written subject and topic
-            const questionsToImport = previewQuestions.map(q => ({
-                ...q,
-                subject,
-                topic: topic.trim() || null
-            })) as Omit<Question, "id">[];
+            // Flatten all questions
+            const questionsToImport: Omit<Question, "id">[] = [];
+            parsedFiles.forEach(file => {
+                file.questions.forEach(q => {
+                    questionsToImport.push({
+                        ...q,
+                        subject: file.subject.trim(),
+                        topic: file.topic.trim() || null
+                    });
+                });
+            });
 
             const res = await importQuestions(questionsToImport);
             if (res?.success) {
@@ -88,6 +145,10 @@ export default function BulkImportPDFForm() {
             setIsImporting(false);
         }
     };
+
+    const totalQuestions = parsedFiles?.reduce((acc, f) => acc + f.questions.length, 0) || 0;
+    const isAnyMissingAnswer = parsedFiles?.some(f => f.questions.some(q => q.correctOption < 0 || q.correctOption > 3 || q.correctOption === undefined || q.correctOption === null));
+    const isAnyMissingSubject = parsedFiles?.some(f => !f.subject.trim());
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -106,7 +167,7 @@ export default function BulkImportPDFForm() {
             </div>
 
             <div className="p-6 space-y-6">
-                {!previewQuestions ? (
+                {!parsedFiles ? (
                     <div className="space-y-4">
                         <label className="flex flex-col items-center justify-center min-h-[160px] border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-indigo-400 transition group focus-within:ring-4 focus-within:ring-indigo-500/10">
                             <input
@@ -145,102 +206,143 @@ export default function BulkImportPDFForm() {
                     </div>
                 ) : (
                     <div className="space-y-6 animate-in slide-in-from-right-4">
-                        <div className="flex items-center gap-3 bg-emerald-50 text-emerald-700 p-4 rounded-xl border border-emerald-100">
-                            <CheckCircle2 className="w-5 h-5" />
-                            <p className="font-semibold text-sm">¡Éxito! Se han extraído {previewQuestions.length} preguntas del PDF.</p>
-                            <button onClick={() => setPreviewQuestions(null)} className="ml-auto text-sm font-bold underline hover:text-emerald-900">Subir otro</button>
+                        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-emerald-50 text-emerald-700 p-4 rounded-xl border border-emerald-100">
+                            <div className="flex items-center gap-3">
+                                <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
+                                <p className="font-semibold text-sm">¡Éxito! Se han extraído {totalQuestions} preguntas de {parsedFiles.length} archivos.</p>
+                            </div>
+                            <button onClick={() => setParsedFiles(null)} className="text-sm font-bold underline hover:text-emerald-900 whitespace-nowrap">Subir otros</button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-gray-700">Materia / Asignatura:</label>
-                                <input
-                                    type="text"
-                                    list="subject-suggestions"
-                                    value={subject}
-                                    onChange={(e) => setSubject(e.target.value)}
-                                    placeholder="Ej: Seguridad Informática..."
-                                    className="w-full border border-gray-300 rounded-xl p-3 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-sm font-medium transition"
-                                />
-                                <datalist id="subject-suggestions">
-                                    {availableSubjects.map((sub, idx) => (
-                                        <option key={idx} value={sub} />
-                                    ))}
-                                </datalist>
+                        {/* Tabs Navigation */}
+                        {parsedFiles.length > 1 && (
+                            <div className="flex overflow-x-auto pb-2 -mb-2 scrollbar-thin gap-2">
+                                {parsedFiles.map((f, i) => {
+                                    const hasMissingAnswers = f.questions.some(q => q.correctOption < 0 || q.correctOption > 3 || q.correctOption === undefined || q.correctOption === null);
+                                    const isMissingSubject = !f.subject.trim();
+                                    const hasErrors = hasMissingAnswers || isMissingSubject;
+
+                                    return (
+                                        <button
+                                            key={i}
+                                            onClick={() => setActiveTab(i)}
+                                            className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold whitespace-nowrap transition-colors border ${activeTab === i
+                                                ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                                : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                                                }`}
+                                        >
+                                            <FileText className="w-4 h-4 opacity-70" />
+                                            <span className="truncate max-w-[150px]">{f.fileName}</span>
+                                            {hasErrors && (
+                                                <span className="flex h-2 w-2 rounded-full bg-red-500 flex-shrink-0 ml-1" title="Requiere atención"></span>
+                                            )}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Active Tab Content */}
+                        <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 shadow-sm">
+                            <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2 border-b border-gray-100 pb-3">
+                                <FileText className="w-5 h-5 text-indigo-500" />
+                                {parsedFiles[activeTab].fileName}
+                                <span className="ml-auto text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+                                    {parsedFiles[activeTab].questions.length} preguntas
+                                </span>
+                            </h3>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-700 flex justify-between">
+                                        Materia / Asignatura:
+                                        {!parsedFiles[activeTab].subject.trim() && <span className="text-red-500 text-[10px] uppercase">Requerido</span>}
+                                    </label>
+                                    <input
+                                        type="text"
+                                        list="subject-suggestions"
+                                        value={parsedFiles[activeTab].subject}
+                                        onChange={(e) => updateParsedFile(activeTab, { subject: e.target.value })}
+                                        placeholder="Ej: Seguridad Informática..."
+                                        className={`w-full border rounded-xl p-3 focus:ring-4 focus:ring-indigo-500/10 outline-none text-sm font-medium transition ${!parsedFiles[activeTab].subject.trim() ? 'border-red-300 focus:border-red-500' : 'border-gray-300 focus:border-indigo-500'}`}
+                                    />
+                                    <datalist id="subject-suggestions">
+                                        {availableSubjects.map((sub, idx) => (
+                                            <option key={idx} value={sub} />
+                                        ))}
+                                    </datalist>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-700">Tema / Etiqueta <span className="text-gray-400 font-normal">(Opcional)</span>:</label>
+                                    <input
+                                        type="text"
+                                        value={parsedFiles[activeTab].topic}
+                                        onChange={(e) => updateParsedFile(activeTab, { topic: e.target.value })}
+                                        placeholder="Ej: Tema 1, AWS..."
+                                        className="w-full border border-gray-300 rounded-xl p-3 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-sm font-medium transition"
+                                    />
+                                </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold text-gray-700">Tema / Etiqueta <span className="text-gray-400 font-normal">(Opcional)</span>:</label>
-                                <input
-                                    type="text"
-                                    value={topic}
-                                    onChange={(e) => setTopic(e.target.value)}
-                                    placeholder="Ej: Tema 1, AWS..."
-                                    className="w-full border border-gray-300 rounded-xl p-3 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-sm font-medium transition"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="bg-gray-50 border border-secondary rounded-xl max-h-[600px] overflow-y-auto p-4 space-y-4 relative scrollbar-thin">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between sticky top-0 bg-gray-50/90 backdrop-blur-md pb-2 border-b border-gray-200 mb-4 z-10 w-full gap-2">
-                                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-2 sm:mt-0">Vista Previa de Extracción</p>
-                                {previewQuestions.some(q => q.correctOption < 0 || q.correctOption > 3 || q.correctOption === undefined || q.correctOption === null) && (
-                                    <span className="text-[10px] sm:text-xs font-bold text-red-600 bg-red-100 px-2 py-1.5 rounded-md flex items-center gap-1.5 shadow-sm border border-red-200 truncate">
-                                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> REVISA LAS RESPUESTAS FALTANTES
-                                    </span>
-                                )}
-                            </div>
-                            {previewQuestions.map((q, i) => {
-                                const isMissing = q.correctOption < 0 || q.correctOption > 3 || q.correctOption === undefined || q.correctOption === null;
-                                return (
-                                    <div key={i} className={`bg-white p-4 sm:p-5 rounded-xl shadow-sm border transition-all relative ${!isMissing ? 'border-gray-200' : 'border-red-300 ring-4 ring-red-50'}`}>
-                                        {isMissing && (
-                                            <div className="absolute -top-3 -right-2 bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm animate-pulse z-20">
-                                                FALTA MARCAR
-                                            </div>
-                                        )}
-                                        <p className="text-sm font-bold text-gray-800 leading-snug mb-4">
-                                            <span className="text-indigo-500 mr-2">{i + 1}.</span>{q.statement}
-                                        </p>
-                                        <div className="grid grid-cols-1 gap-2 mt-2">
-                                            {[q.optionA, q.optionB, q.optionC, q.optionD].map((opt, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    onClick={() => {
-                                                        const newQ = [...previewQuestions];
-                                                        newQ[i] = { ...newQ[i], correctOption: idx };
-                                                        setPreviewQuestions(newQ);
-                                                    }}
-                                                    className={`cursor-pointer group text-sm p-3 rounded-xl border transition-all flex items-start gap-3 select-none ${q.correctOption === idx
-                                                        ? "bg-emerald-50 border-emerald-400 text-emerald-800 shadow-sm"
-                                                        : "bg-white border-gray-200 text-gray-600 hover:bg-slate-50 hover:border-slate-300"
-                                                        }`}
-                                                >
-                                                    <div className="flex-1 flex gap-2">
-                                                        <span className={`font-bold mt-0.5 ${q.correctOption === idx ? "text-emerald-600" : "text-gray-400"}`}>
-                                                            {['A', 'B', 'C', 'D'][idx]}.
-                                                        </span>
-                                                        <span className="leading-snug">{opt}</span>
-                                                    </div>
-                                                    {q.correctOption === idx ? (
-                                                        <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
-                                                    ) : (
-                                                        <div className="w-5 h-5 rounded-full border-2 border-slate-200 mt-0.5 flex-shrink-0 group-hover:border-slate-400 transition-colors bg-white" />
-                                                    )}
+                            <div className="bg-gray-50 border border-gray-200 rounded-xl max-h-[500px] overflow-y-auto p-4 space-y-4 relative scrollbar-thin">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between sticky top-0 bg-gray-50/90 backdrop-blur-md pb-2 border-b border-gray-200 mb-4 z-10 w-full gap-2">
+                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mt-2 sm:mt-0">Vista Previa de Preguntas</p>
+                                    {parsedFiles[activeTab].questions.some(q => q.correctOption < 0 || q.correctOption > 3 || q.correctOption === undefined || q.correctOption === null) && (
+                                        <span className="text-[10px] sm:text-xs font-bold text-red-600 bg-red-100 px-2 py-1.5 rounded-md flex items-center gap-1.5 shadow-sm border border-red-200 truncate">
+                                            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> REVISA LAS RESPUESTAS FALTANTES
+                                        </span>
+                                    )}
+                                </div>
+                                
+                                {parsedFiles[activeTab].questions.map((q, i) => {
+                                    const isMissing = q.correctOption < 0 || q.correctOption > 3 || q.correctOption === undefined || q.correctOption === null;
+                                    return (
+                                        <div key={i} className={`bg-white p-4 sm:p-5 rounded-xl shadow-sm border transition-all relative ${!isMissing ? 'border-gray-200' : 'border-red-300 ring-4 ring-red-50'}`}>
+                                            {isMissing && (
+                                                <div className="absolute -top-3 -right-2 bg-red-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-sm animate-pulse z-20">
+                                                    FALTA MARCAR
                                                 </div>
-                                            ))}
+                                            )}
+                                            <p className="text-sm font-bold text-gray-800 leading-snug mb-4">
+                                                <span className="text-indigo-500 mr-2">{i + 1}.</span>{q.statement}
+                                            </p>
+                                            <div className="grid grid-cols-1 gap-2 mt-2">
+                                                {[q.optionA, q.optionB, q.optionC, q.optionD].map((opt, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        onClick={() => updateQuestion(activeTab, i, idx)}
+                                                        className={`cursor-pointer group text-sm p-3 rounded-xl border transition-all flex items-start gap-3 select-none ${q.correctOption === idx
+                                                            ? "bg-emerald-50 border-emerald-400 text-emerald-800 shadow-sm"
+                                                            : "bg-white border-gray-200 text-gray-600 hover:bg-slate-50 hover:border-slate-300"
+                                                            }`}
+                                                    >
+                                                        <div className="flex-1 flex gap-2">
+                                                            <span className={`font-bold mt-0.5 ${q.correctOption === idx ? "text-emerald-600" : "text-gray-400"}`}>
+                                                                {['A', 'B', 'C', 'D'][idx]}.
+                                                            </span>
+                                                            <span className="leading-snug">{opt}</span>
+                                                        </div>
+                                                        {q.correctOption === idx ? (
+                                                            <CheckCircle2 className="w-5 h-5 text-emerald-500 mt-0.5 flex-shrink-0" />
+                                                        ) : (
+                                                            <div className="w-5 h-5 rounded-full border-2 border-slate-200 mt-0.5 flex-shrink-0 group-hover:border-slate-400 transition-colors bg-white" />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )
-                            })}
+                                    )
+                                })}
+                            </div>
                         </div>
 
                         <button
                             onClick={handleImport}
-                            disabled={isImporting || !subject.trim() || previewQuestions.some(q => q.correctOption < 0 || q.correctOption > 3 || q.correctOption === undefined || q.correctOption === null)}
+                            disabled={isImporting || isAnyMissingSubject || isAnyMissingAnswer}
                             className="w-full py-4 bg-gray-900 text-white hover:bg-indigo-600 transition tracking-wide font-black rounded-xl disabled:opacity-50 flex justify-center items-center gap-2 shadow-lg hover:shadow-indigo-600/20"
                         >
-                            {isImporting ? 'Guardando en Base de Datos...' : `Almacenar estas ${previewQuestions.length} preguntas`}
+                            {isImporting ? 'Guardando en Base de Datos...' : `Almacenar las ${totalQuestions} preguntas de todos los archivos`}
                         </button>
                     </div>
                 )}

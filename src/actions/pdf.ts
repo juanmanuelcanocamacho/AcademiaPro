@@ -11,7 +11,7 @@ export async function parseMoodlePDF(formData: FormData) {
         const files = formData.getAll("file") as File[];
         if (!files || files.length === 0) return { success: false, error: "No files uploaded" };
 
-        const allQuestions: any[] = [];
+        const allResults: { fileName: string, questions: any[] }[] = [];
 
         // Procesamos todos los PDFs concurrentemente para mayor velocidad
         await Promise.all(
@@ -98,16 +98,22 @@ export async function parseMoodlePDF(formData: FormData) {
                 });
 
                 if (object.questions && object.questions.length > 0) {
-                    allQuestions.push(...object.questions);
+                    allResults.push({
+                        fileName: file.name,
+                        questions: object.questions
+                    });
                 }
             })
         );
 
-        if (allQuestions.length === 0) {
+        if (allResults.length === 0) {
             return { success: false, error: "La IA no ha podido encontrar ninguna pregunta con opciones válido en estos documentos." };
         }
 
-        return { success: true, questions: allQuestions };
+        // Sort by file name to keep it consistent
+        allResults.sort((a, b) => a.fileName.localeCompare(b.fileName));
+
+        return { success: true, results: allResults };
 
     } catch (error) {
         console.error("AI PDF Parse error", error);
