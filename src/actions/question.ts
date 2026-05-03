@@ -27,7 +27,8 @@ export async function getQuestions(page: number = 1, limit: number = 50, search?
             orderBy: [
                 { createdAt: "desc" },
                 { subject: "asc" },
-                { topic: "asc" }
+                { topic: "asc" },
+                { id: "asc" }
             ],
             skip: (page - 1) * limit,
             take: limit,
