@@ -8,5 +8,6 @@ export interface Question {
     optionD: string;
     correctOption: number;
     topic?: string | null;
+    image?: string | null;
     userId?: string | null;
 }

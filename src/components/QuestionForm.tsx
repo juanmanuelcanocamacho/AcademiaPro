@@ -50,7 +50,7 @@ export default function QuestionForm({
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1">
                                 Asignatura / Módulo
@@ -73,6 +73,18 @@ export default function QuestionForm({
                                 name="topic"
                                 defaultValue={initialData?.topic || ""}
                                 placeholder="Ej. Tema 1, AWS, TCP/IP..."
+                                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                                URL de Imagen <span className="text-slate-400 font-normal">(Opcional)</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="image"
+                                defaultValue={initialData?.image || ""}
+                                placeholder="URL o base64"
                                 className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
                             />
                         </div>

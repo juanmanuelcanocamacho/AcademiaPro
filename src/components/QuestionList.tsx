@@ -198,12 +198,20 @@ export default function QuestionList({ questions }: { questions: Question[] }) {
                                                     <td className="p-4 align-top text-slate-700">
                                                         {isEditing ? (
                                                             <div className="space-y-3 p-1">
-                                                                <input
-                                                                    defaultValue={q.topic || ""}
-                                                                    onChange={(e) => setEditForm(prev => ({ ...prev, topic: e.target.value }))}
-                                                                    placeholder="Tema / Etiqueta (opcional)"
-                                                                    className="w-full sm:w-1/2 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white shadow-sm font-medium text-slate-700"
-                                                                />
+                                                                <div className="flex flex-col sm:flex-row gap-3">
+                                                                    <input
+                                                                        defaultValue={q.topic || ""}
+                                                                        onChange={(e) => setEditForm(prev => ({ ...prev, topic: e.target.value }))}
+                                                                        placeholder="Tema / Etiqueta (opcional)"
+                                                                        className="flex-1 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white shadow-sm font-medium text-slate-700"
+                                                                    />
+                                                                    <input
+                                                                        defaultValue={q.image || ""}
+                                                                        onChange={(e) => setEditForm(prev => ({ ...prev, image: e.target.value }))}
+                                                                        placeholder="URL de imagen (opcional)"
+                                                                        className="flex-1 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white shadow-sm font-medium text-slate-700"
+                                                                    />
+                                                                </div>
                                                                 <textarea
                                                                     defaultValue={q.statement}
                                                                     onChange={(e) => setEditForm(prev => ({ ...prev, statement: e.target.value }))}
@@ -243,6 +251,12 @@ export default function QuestionList({ questions }: { questions: Question[] }) {
                                                                     </span>
                                                                 )}
                                                                 <p className="font-medium line-clamp-3 group-hover:text-slate-900 transition-colors leading-relaxed">{q.statement}</p>
+                                                                {q.image && (
+                                                                    <div className="mt-3 relative w-32 h-20 rounded-lg overflow-hidden border border-slate-100 bg-slate-50 group-hover:border-slate-200 transition-colors">
+                                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                        <img src={q.image} alt="Preview" className="w-full h-full object-cover" />
+                                                                    </div>
+                                                                )}
                                                                 {/* Options Preview */}
                                                                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs sm:text-sm text-slate-500">
                                                                     <div className={`p-2.5 rounded-xl border ${q.correctOption === 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-medium tracking-tight shadow-sm' : 'bg-white border-slate-100 shadow-sm'}`}><span className="font-bold mr-1 opacity-50">A.</span> {q.optionA}</div>

@@ -194,7 +194,15 @@ export default function ExamForm({ questions: initialQuestions, subject }: { que
                             <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0 font-black text-indigo-700 text-sm">
                                 {qi + 1}
                             </div>
-                            <h3 className="text-[15px] font-bold text-gray-800 leading-snug pt-1.5">{q.statement}</h3>
+                            <div className="flex-1 space-y-4">
+                                <h3 className="text-[15px] font-bold text-gray-800 leading-snug pt-1.5">{q.statement}</h3>
+                                {q.image && (
+                                    <div className="relative rounded-2xl overflow-hidden border border-gray-100 max-w-full sm:max-w-md bg-gray-50">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={q.image} alt="Question supplement" className="w-full h-auto object-contain" />
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="space-y-2.5">

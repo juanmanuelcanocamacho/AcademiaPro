@@ -20,6 +20,7 @@ model Question {
   correctOption Int      // Índice de respuesta correcta (0 para A, 1 para B, 2 para C, 3 para D)
   subject       String   // Módulo/Asignatura
   topic         String?  // Sub-tema o etiqueta opcional
+  image         String?  // URL o base64 de la imagen opcional
   userId        String?  // Propietario de la pregunta (null = del sistema viejo)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
