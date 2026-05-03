@@ -22,8 +22,8 @@ export async function getSubjects() {
 
         const subjectsWithTopics = Array.from(map.entries()).map(([sub, tops]) => ({
             subject: sub,
-            topics: Array.from(tops).sort(),
-        })).sort((a, b) => a.subject.localeCompare(b.subject));
+            topics: Array.from(tops).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+        })).sort((a, b) => a.subject.localeCompare(b.subject, undefined, { numeric: true }));
 
         return {
             success: true,
