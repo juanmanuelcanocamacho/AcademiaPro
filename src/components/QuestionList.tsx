@@ -125,7 +125,9 @@ export default function QuestionList({ questions }: { questions: Question[] }) {
 
     return (
         <div className="relative pb-24 space-y-4">
-            {Object.entries(groupedQuestions).map(([subject, subjectQuestions]) => {
+            {Object.entries(groupedQuestions)
+                .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+                .map(([subject, subjectQuestions]) => {
                 const totalSubjects = Object.keys(groupedQuestions).length;
                 const isExpandedByDefault = totalSubjects <= 3;
                 const opened = expandedSubjects[subject] ?? isExpandedByDefault;
