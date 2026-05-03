@@ -72,25 +72,22 @@ export async function parseMoodlePDF(formData: FormData) {
                     schema: z.object({
                         questions: z.array(z.object({
                             statement: z.string().describe("El enunciado de la pregunta, limpio y sin metadata del sistema Moodle (sin textos como 'Pregunta 1', 'Se puntúa como 0', 'Sin contestar', 'Incorrecta')."),
-                            optionA: z.string().describe("El texto exclusivo de la opción A, sin incluir la letra 'A.'."),
-                            optionB: z.string().describe("El texto exclusivo de la opción B, sin incluir la letra 'B.'."),
-                            optionC: z.string().describe("El texto exclusivo de la opción C, sin incluir la letra 'C.'. Si no hay, usa '-'."),
-                            optionD: z.string().describe("El texto exclusivo de la opción D, sin incluir la letra 'D.'. Si no hay, usa '-'."),
-                            correctOption: z.number().describe("Un número entre 0 y 3 que representa la opción correcta (0 para A, 1 para B, 2 para C, 3 para D). Localiza cuál de las opciones tiene la etiqueta [ESTA ES LA RESPUESTA CORRECTA] al principio.")
+                            optionA: z.string().describe("El texto exclusivo de la opción A, sin incluir la letra 'A.' y SIN la etiqueta '[ESTA ES LA RESPUESTA CORRECTA]'."),
+                            optionB: z.string().describe("El texto exclusivo de la opción B, sin incluir la letra 'B.' y SIN la etiqueta '[ESTA ES LA RESPUESTA CORRECTA]'."),
+                            optionC: z.string().describe("El texto exclusivo de la opción C, sin incluir la letra 'C.' y SIN la etiqueta '[ESTA ES LA RESPUESTA CORRECTA]'. Si no hay, usa '-'."),
+                            optionD: z.string().describe("El texto exclusivo de la opción D, sin incluir la letra 'D.' y SIN la etiqueta '[ESTA ES LA RESPUESTA CORRECTA]'. Si no hay, usa '-'."),
+                            correctOption: z.number().describe("Un número entre 0 y 3 que representa la opción correcta (0 para A, 1 para B, 2 para C, 3 para D).")
                         }))
                     }),
                     prompt: `
                     Aquí tienes el texto en bruto extraído de la exportación a PDF de un test/examen realizado en la plataforma Moodle.
-                    El texto está lleno de basura de formato (como saltos de línea donde no tocan, menciones de "Se puntúa 0", "Incorrecta", "Sin contestar", etc.).
-                    
                     Tu trabajo es limpiar analíticamente este texto y devolverme un array con las preguntas perfectas.
                     Ignora absolutamente todo el texto que no pertenezca estrictamente al enunciado de una pregunta o a sus respuestas.
-                    Si el formato carece de algunas opciones C o D, utiliza el carácter '-' como placeholder literal.
                     
-                    ¡MUY IMPORTANTE PARA LA RESPUESTA CORRECTA!:
-                    El pre-procesador ha inyectado el tag literal "[ESTA ES LA RESPUESTA CORRECTA]" justo en la línea de la opción que estaba en negrita en el PDF.
-                    La opción correcta será obligatoria y matemáticamente aquella que contenga o vaya precedida por ese tag.
-                    Mapea la correcta traduciéndolo a su índice numérico exacto (0-3).
+                    ¡INSTRUCCIONES VITALES PARA LA RESPUESTA CORRECTA!:
+                    1. El pre-procesador puede haber inyectado la etiqueta literal "[ESTA ES LA RESPUESTA CORRECTA]" junto a la opción que estaba en negrita. Si la ves, es un indicio muy fuerte de que esa es la respuesta.
+                    2. SIN EMBARGO, Moodle a veces añade un texto de retroalimentación explícito (ej: "La respuesta correcta es: Bajo"). Si ves este texto explícito confirmando cuál es la respuesta, PRIORIZA EL TEXTO EXPLÍCITO por encima de la etiqueta inyectada.
+                    3. LIMPIEZA OBLIGATORIA: Tienes totalmente PROHIBIDO incluir la etiqueta "[ESTA ES LA RESPUESTA CORRECTA]" en el texto final de las opciones (optionA, optionB, etc). Elimínala por completo para que el texto quede limpio.
                     
                     TEXTO BRUTO DEL PDF:
                     ${text}

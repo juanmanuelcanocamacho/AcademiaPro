@@ -51,8 +51,12 @@ export default function ExamForm({ questions: initialQuestions, subject }: { que
             } catch (e) {
                 console.error("Failed to parse saved exam state");
             }
+        } else {
+            // Apply shuffling on first load if no saved state exists
+            setQuestions(shuffleQuestions(initialQuestions));
         }
         setMounted(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [storageKey]);
 
     useEffect(() => {
