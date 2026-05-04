@@ -229,7 +229,11 @@ export default function QuestionList({ questions }: { questions: Question[] }) {
                                                                                     onChange={() => setEditForm(prev => ({ ...prev, correctOption: idx }))}
                                                                                     className="text-emerald-600 focus:ring-emerald-500 w-4 h-4"
                                                                                 />
-                                                                                <span className="font-bold text-slate-500">Opción {letter} (Correcta)</span>
+                                                                                <span className="font-bold text-slate-500">
+                                                                                    Opción {letter} {(editForm.correctOption ?? q.correctOption) === idx && (
+                                                                                        <span className="text-emerald-600 ml-1">(Correcta)</span>
+                                                                                    )}
+                                                                                </span>
                                                                             </label>
                                                                             <input
                                                                                 defaultValue={idx === 0 ? q.optionA : idx === 1 ? q.optionB : idx === 2 ? q.optionC : q.optionD}
