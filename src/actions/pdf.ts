@@ -60,39 +60,79 @@ export async function parseMoodlePDF(formData: FormData) {
                     text = text.replace(new RegExp(`\\[${rareFont}\\]`, 'g'), '[ESTA ES LA RESPUESTA CORRECTA]');
                 }
 
-                // Give the AI only the first 15000 characters just in case it's a massive PDF
-                text = text.substring(0, 15000);
-
                 console.log("=== EXTRACTION PREVIEW ===");
-                console.log(text.substring(0, 1500)); // Log the first 1500 chars to see what it looks like
+                console.log(text.substring(0, 1500));
+                console.log(`=== TOTAL TEXT LENGTH: ${text.length} characters ===`);
 
-                // Using OpenAI to intelligently extract the questions
-                const { object } = await generateObject({
-                    model: openai('gpt-4o-mini'),
-                    schema: z.object({
-                        questions: z.array(z.object({
-                            statement: z.string().describe("El enunciado de la pregunta, limpio y sin metadata del sistema Moodle (sin textos como 'Pregunta 1', 'Se puntúa como 0', 'Sin contestar', 'Incorrecta')."),
-                            optionA: z.string().describe("El texto exclusivo de la opción A, sin incluir la letra 'A.' y SIN la etiqueta '[ESTA ES LA RESPUESTA CORRECTA]'."),
-                            optionB: z.string().describe("El texto exclusivo de la opción B, sin incluir la letra 'B.' y SIN la etiqueta '[ESTA ES LA RESPUESTA CORRECTA]'."),
-                            optionC: z.string().describe("El texto exclusivo de la opción C, sin incluir la letra 'C.' y SIN la etiqueta '[ESTA ES LA RESPUESTA CORRECTA]'. Si no hay, usa '-'."),
-                            optionD: z.string().describe("El texto exclusivo de la opción D, sin incluir la letra 'D.' y SIN la etiqueta '[ESTA ES LA RESPUESTA CORRECTA]'. Si no hay, usa '-'."),
-                            correctOption: z.number().describe("Un número entre 0 y 3 que representa la opción correcta (0 para A, 1 para B, 2 para C, 3 para D).")
-                        }))
-                    }),
-                    prompt: `
-                    Aquí tienes el texto en bruto extraído de la exportación a PDF de un test/examen realizado en la plataforma Moodle.
-                    Tu trabajo es limpiar analíticamente este texto y devolverme un array con las preguntas perfectas.
-                    Ignora absolutamente todo el texto que no pertenezca estrictamente al enunciado de una pregunta o a sus respuestas.
-                    
-                    ¡INSTRUCCIONES VITALES PARA LA RESPUESTA CORRECTA!:
-                    1. El pre-procesador puede haber inyectado la etiqueta literal "[ESTA ES LA RESPUESTA CORRECTA]" junto a la opción que estaba en negrita. Si la ves, es un indicio muy fuerte de que esa es la respuesta.
-                    2. SIN EMBARGO, Moodle a veces añade un texto de retroalimentación explícito (ej: "La respuesta correcta es: Bajo"). Si ves este texto explícito confirmando cuál es la respuesta, PRIORIZA EL TEXTO EXPLÍCITO por encima de la etiqueta inyectada.
-                    3. LIMPIEZA OBLIGATORIA: Tienes totalmente PROHIBIDO incluir la etiqueta "[ESTA ES LA RESPUESTA CORRECTA]" en el texto final de las opciones (optionA, optionB, etc). Elimínala por completo para que el texto quede limpio.
-                    
-                    TEXTO BRUTO DEL PDF:
-                    ${text}
-                    `,
+                // Procesamos el PDF en chunks para soportar exámenes grandes sin perder preguntas.
+                // gpt-4o-mini soporta 128k tokens (~500k chars), usamos chunks de 80k con
+                // solapamiento de 2k para no cortar preguntas a mitad.
+                const CHUNK_SIZE = 80000;
+                const OVERLAP = 2000;
+                const chunks: string[] = [];
+
+                if (text.length <= CHUNK_SIZE) {
+                    chunks.push(text);
+                } else {
+                    let start = 0;
+                    while (start < text.length) {
+                        chunks.push(text.substring(start, start + CHUNK_SIZE));
+                        start += CHUNK_SIZE - OVERLAP;
+                    }
+                }
+
+                console.log(`=== PROCESSING IN ${chunks.length} CHUNK(S) ===`);
+
+                const questionSchema = z.object({
+                    questions: z.array(z.object({
+                        statement: z.string().describe("El enunciado de la pregunta, limpio y sin metadata del sistema Moodle (sin textos como 'Pregunta 1', 'Se puntúa como 0', 'Sin contestar', 'Incorrecta')."),
+                        optionA: z.string().describe("El texto exclusivo de la opción A, sin incluir la letra 'A.' y SIN la etiqueta '[ESTA ES LA RESPUESTA CORRECTA]'."),
+                        optionB: z.string().describe("El texto exclusivo de la opción B, sin incluir la letra 'B.' y SIN la etiqueta '[ESTA ES LA RESPUESTA CORRECTA]'."),
+                        optionC: z.string().describe("El texto exclusivo de la opción C, sin incluir la letra 'C.' y SIN la etiqueta '[ESTA ES LA RESPUESTA CORRECTA]'. Si no hay, usa '-'."),
+                        optionD: z.string().describe("El texto exclusivo de la opción D, sin incluir la letra 'D.' y SIN la etiqueta '[ESTA ES LA RESPUESTA CORRECTA]'. Si no hay, usa '-'."),
+                        correctOption: z.number().describe("Un número entre 0 y 3 que representa la opción correcta (0 para A, 1 para B, 2 para C, 3 para D).")
+                    }))
                 });
+
+                const chunkResults = await Promise.all(
+                    chunks.map(async (chunk, idx) => {
+                        const { object } = await generateObject({
+                            model: openai('gpt-4o-mini'),
+                            schema: questionSchema,
+                            prompt: `
+                            Aquí tienes el texto en bruto extraído de la exportación a PDF de un test/examen realizado en la plataforma Moodle.
+                            ${chunks.length > 1 ? `Este es el fragmento ${idx + 1} de ${chunks.length} del documento completo.` : ''}
+                            Tu trabajo es limpiar analíticamente este texto y devolverme un array con las preguntas perfectas.
+                            Ignora absolutamente todo el texto que no pertenezca estrictamente al enunciado de una pregunta o a sus respuestas.
+                            IMPORTANTE: Solo incluye preguntas COMPLETAS (con enunciado y sus 4 opciones). Si una pregunta está cortada al inicio o al final del fragmento, ignórala.
+                            
+                            ¡INSTRUCCIONES VITALES PARA LA RESPUESTA CORRECTA!:
+                            1. El pre-procesador puede haber inyectado la etiqueta literal "[ESTA ES LA RESPUESTA CORRECTA]" junto a la opción que estaba en negrita. Si la ves, es un indicio muy fuerte de que esa es la respuesta.
+                            2. SIN EMBARGO, Moodle a veces añade un texto de retroalimentación explícito (ej: "La respuesta correcta es: Bajo"). Si ves este texto explícito confirmando cuál es la respuesta, PRIORIZA EL TEXTO EXPLÍCITO por encima de la etiqueta inyectada.
+                            3. LIMPIEZA OBLIGATORIA: Tienes totalmente PROHIBIDO incluir la etiqueta "[ESTA ES LA RESPUESTA CORRECTA]" en el texto final de las opciones (optionA, optionB, etc). Elimínala por completo para que el texto quede limpio.
+                            
+                            TEXTO BRUTO DEL PDF:
+                            ${chunk}
+                            `,
+                        });
+                        return object.questions || [];
+                    })
+                );
+
+                // Combinar resultados de todos los chunks y deduplicar por enunciado
+                const seenStatements = new Set<string>();
+                const allQuestions: any[] = [];
+                for (const chunkQuestions of chunkResults) {
+                    for (const q of chunkQuestions) {
+                        const key = q.statement.substring(0, 80).trim().toLowerCase();
+                        if (!seenStatements.has(key)) {
+                            seenStatements.add(key);
+                            allQuestions.push(q);
+                        }
+                    }
+                }
+
+                const object = { questions: allQuestions };
 
                 if (object.questions && object.questions.length > 0) {
                     allResults.push({
