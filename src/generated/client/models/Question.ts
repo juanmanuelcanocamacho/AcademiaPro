@@ -44,6 +44,7 @@ export type QuestionMinAggregateOutputType = {
   correctOption: number | null
   subject: string | null
   topic: string | null
+  image: string | null
   userId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -59,6 +60,7 @@ export type QuestionMaxAggregateOutputType = {
   correctOption: number | null
   subject: string | null
   topic: string | null
+  image: string | null
   userId: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -74,6 +76,7 @@ export type QuestionCountAggregateOutputType = {
   correctOption: number
   subject: number
   topic: number
+  image: number
   userId: number
   createdAt: number
   updatedAt: number
@@ -99,6 +102,7 @@ export type QuestionMinAggregateInputType = {
   correctOption?: true
   subject?: true
   topic?: true
+  image?: true
   userId?: true
   createdAt?: true
   updatedAt?: true
@@ -114,6 +118,7 @@ export type QuestionMaxAggregateInputType = {
   correctOption?: true
   subject?: true
   topic?: true
+  image?: true
   userId?: true
   createdAt?: true
   updatedAt?: true
@@ -129,6 +134,7 @@ export type QuestionCountAggregateInputType = {
   correctOption?: true
   subject?: true
   topic?: true
+  image?: true
   userId?: true
   createdAt?: true
   updatedAt?: true
@@ -231,6 +237,7 @@ export type QuestionGroupByOutputType = {
   correctOption: number
   subject: string
   topic: string | null
+  image: string | null
   userId: string | null
   createdAt: Date
   updatedAt: Date
@@ -269,6 +276,7 @@ export type QuestionWhereInput = {
   correctOption?: Prisma.IntFilter<"Question"> | number
   subject?: Prisma.StringFilter<"Question"> | string
   topic?: Prisma.StringNullableFilter<"Question"> | string | null
+  image?: Prisma.StringNullableFilter<"Question"> | string | null
   userId?: Prisma.StringNullableFilter<"Question"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Question"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Question"> | Date | string
@@ -285,6 +293,7 @@ export type QuestionOrderByWithRelationInput = {
   correctOption?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   topic?: Prisma.SortOrderInput | Prisma.SortOrder
+  image?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -304,6 +313,7 @@ export type QuestionWhereUniqueInput = Prisma.AtLeast<{
   correctOption?: Prisma.IntFilter<"Question"> | number
   subject?: Prisma.StringFilter<"Question"> | string
   topic?: Prisma.StringNullableFilter<"Question"> | string | null
+  image?: Prisma.StringNullableFilter<"Question"> | string | null
   userId?: Prisma.StringNullableFilter<"Question"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Question"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Question"> | Date | string
@@ -320,6 +330,7 @@ export type QuestionOrderByWithAggregationInput = {
   correctOption?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   topic?: Prisma.SortOrderInput | Prisma.SortOrder
+  image?: Prisma.SortOrderInput | Prisma.SortOrder
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -343,6 +354,7 @@ export type QuestionScalarWhereWithAggregatesInput = {
   correctOption?: Prisma.IntWithAggregatesFilter<"Question"> | number
   subject?: Prisma.StringWithAggregatesFilter<"Question"> | string
   topic?: Prisma.StringNullableWithAggregatesFilter<"Question"> | string | null
+  image?: Prisma.StringNullableWithAggregatesFilter<"Question"> | string | null
   userId?: Prisma.StringNullableWithAggregatesFilter<"Question"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Question"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Question"> | Date | string
@@ -358,6 +370,7 @@ export type QuestionCreateInput = {
   correctOption: number
   subject: string
   topic?: string | null
+  image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   user?: Prisma.UserCreateNestedOneWithoutQuestionsInput
@@ -373,6 +386,7 @@ export type QuestionUncheckedCreateInput = {
   correctOption: number
   subject: string
   topic?: string | null
+  image?: string | null
   userId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -388,6 +402,7 @@ export type QuestionUpdateInput = {
   correctOption?: Prisma.IntFieldUpdateOperationsInput | number
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   topic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneWithoutQuestionsNestedInput
@@ -403,6 +418,7 @@ export type QuestionUncheckedUpdateInput = {
   correctOption?: Prisma.IntFieldUpdateOperationsInput | number
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   topic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -418,6 +434,7 @@ export type QuestionCreateManyInput = {
   correctOption: number
   subject: string
   topic?: string | null
+  image?: string | null
   userId?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -433,6 +450,7 @@ export type QuestionUpdateManyMutationInput = {
   correctOption?: Prisma.IntFieldUpdateOperationsInput | number
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   topic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -447,6 +465,7 @@ export type QuestionUncheckedUpdateManyInput = {
   correctOption?: Prisma.IntFieldUpdateOperationsInput | number
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   topic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -462,6 +481,7 @@ export type QuestionCountOrderByAggregateInput = {
   correctOption?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   topic?: Prisma.SortOrder
+  image?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -481,6 +501,7 @@ export type QuestionMaxOrderByAggregateInput = {
   correctOption?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   topic?: Prisma.SortOrder
+  image?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -496,6 +517,7 @@ export type QuestionMinOrderByAggregateInput = {
   correctOption?: Prisma.SortOrder
   subject?: Prisma.SortOrder
   topic?: Prisma.SortOrder
+  image?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -587,6 +609,7 @@ export type QuestionCreateWithoutUserInput = {
   correctOption: number
   subject: string
   topic?: string | null
+  image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -601,6 +624,7 @@ export type QuestionUncheckedCreateWithoutUserInput = {
   correctOption: number
   subject: string
   topic?: string | null
+  image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -644,6 +668,7 @@ export type QuestionScalarWhereInput = {
   correctOption?: Prisma.IntFilter<"Question"> | number
   subject?: Prisma.StringFilter<"Question"> | string
   topic?: Prisma.StringNullableFilter<"Question"> | string | null
+  image?: Prisma.StringNullableFilter<"Question"> | string | null
   userId?: Prisma.StringNullableFilter<"Question"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Question"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Question"> | Date | string
@@ -659,6 +684,7 @@ export type QuestionCreateManyUserInput = {
   correctOption: number
   subject: string
   topic?: string | null
+  image?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -673,6 +699,7 @@ export type QuestionUpdateWithoutUserInput = {
   correctOption?: Prisma.IntFieldUpdateOperationsInput | number
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   topic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -687,6 +714,7 @@ export type QuestionUncheckedUpdateWithoutUserInput = {
   correctOption?: Prisma.IntFieldUpdateOperationsInput | number
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   topic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -701,6 +729,7 @@ export type QuestionUncheckedUpdateManyWithoutUserInput = {
   correctOption?: Prisma.IntFieldUpdateOperationsInput | number
   subject?: Prisma.StringFieldUpdateOperationsInput | string
   topic?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -717,6 +746,7 @@ export type QuestionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   correctOption?: boolean
   subject?: boolean
   topic?: boolean
+  image?: boolean
   userId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -733,6 +763,7 @@ export type QuestionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   correctOption?: boolean
   subject?: boolean
   topic?: boolean
+  image?: boolean
   userId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -749,6 +780,7 @@ export type QuestionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   correctOption?: boolean
   subject?: boolean
   topic?: boolean
+  image?: boolean
   userId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -765,12 +797,13 @@ export type QuestionSelectScalar = {
   correctOption?: boolean
   subject?: boolean
   topic?: boolean
+  image?: boolean
   userId?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type QuestionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "statement" | "optionA" | "optionB" | "optionC" | "optionD" | "correctOption" | "subject" | "topic" | "userId" | "createdAt" | "updatedAt", ExtArgs["result"]["question"]>
+export type QuestionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "statement" | "optionA" | "optionB" | "optionC" | "optionD" | "correctOption" | "subject" | "topic" | "image" | "userId" | "createdAt" | "updatedAt", ExtArgs["result"]["question"]>
 export type QuestionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.Question$userArgs<ExtArgs>
 }
@@ -796,6 +829,7 @@ export type $QuestionPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     correctOption: number
     subject: string
     topic: string | null
+    image: string | null
     userId: string | null
     createdAt: Date
     updatedAt: Date
@@ -1232,6 +1266,7 @@ export interface QuestionFieldRefs {
   readonly correctOption: Prisma.FieldRef<"Question", 'Int'>
   readonly subject: Prisma.FieldRef<"Question", 'String'>
   readonly topic: Prisma.FieldRef<"Question", 'String'>
+  readonly image: Prisma.FieldRef<"Question", 'String'>
   readonly userId: Prisma.FieldRef<"Question", 'String'>
   readonly createdAt: Prisma.FieldRef<"Question", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Question", 'DateTime'>

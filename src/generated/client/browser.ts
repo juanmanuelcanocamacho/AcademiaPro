@@ -52,3 +52,8 @@ export type SharedSubject = Prisma.SharedSubjectModel
  * 
  */
 export type SystemSettings = Prisma.SystemSettingsModel
+/**
+ * Model TheoryDocument
+ * 
+ */
+export type TheoryDocument = Prisma.TheoryDocumentModel

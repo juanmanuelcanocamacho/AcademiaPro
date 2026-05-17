@@ -4,25 +4,24 @@ import { useState } from "react";
 import BulkImportForm from "@/components/BulkImportForm";
 import BulkImportPDFForm from "@/components/BulkImportPDFForm";
 import QuestionForm from "@/components/QuestionForm";
-import Link from "next/link";
-import { ArrowLeft, Table, FileText, Plus } from "lucide-react";
+import { FileText, Table, Plus } from "lucide-react";
 
 export default function ImportPage() {
     const [mode, setMode] = useState<"excel" | "pdf" | "manual">("pdf");
 
     return (
         <div className="p-8 max-w-3xl mx-auto">
-            <Link
-                href="/admin"
-                className="inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-indigo-600 border border-gray-200 bg-white px-4 py-2 rounded-xl mb-8 transition"
-            >
-                <ArrowLeft className="w-4 h-4" /> Volver al Panel
-            </Link>
-
-            <h1 className="text-2xl font-black text-gray-900 tracking-tight mb-1">Carga Inteligente</h1>
-            <p className="text-gray-400 text-sm mb-6">
-                Elige el formato de origen de tus preguntas para subirlas masivamente a la plataforma.
-            </p>
+            <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center shrink-0">
+                    <FileText className="w-5 h-5 text-sky-600" />
+                </div>
+                <div>
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Importar Preguntas</h1>
+                    <p className="text-gray-400 text-sm mt-0.5">
+                        Elige el formato de origen de tus preguntas para subirlas a la plataforma.
+                    </p>
+                </div>
+            </div>
 
             <div className="flex flex-col sm:flex-row gap-2 mx-auto mb-8 bg-gray-100 p-1.5 rounded-2xl">
                 <button

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle, ArrowRight, RotateCcw, Trophy, CircleHelp } from "lucide-react";
 import { Question } from "@/types";
+import TheoryChat from "./TheoryChat";
 
 export default function ReviewForm({ questions: initialQuestions, subject }: { questions: Question[]; subject: string }) {
     const searchParams = useSearchParams();
@@ -283,6 +284,8 @@ export default function ReviewForm({ questions: initialQuestions, subject }: { q
                     </button>
                 </div>
             )}
+            {/* AI Theory Chat */}
+            <TheoryChat subject={subject} currentQuestion={current?.statement} />
         </div>
     );
 }

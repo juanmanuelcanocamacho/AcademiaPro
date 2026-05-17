@@ -57,7 +57,8 @@ export const ModelName = {
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   SharedSubject: 'SharedSubject',
-  SystemSettings: 'SystemSettings'
+  SystemSettings: 'SystemSettings',
+  TheoryDocument: 'TheoryDocument'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -86,6 +87,7 @@ export const QuestionScalarFieldEnum = {
   correctOption: 'correctOption',
   subject: 'subject',
   topic: 'topic',
+  image: 'image',
   userId: 'userId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -164,10 +166,25 @@ export const SystemSettingsScalarFieldEnum = {
   id: 'id',
   allowPublicBank: 'allowPublicBank',
   allowStudentImport: 'allowStudentImport',
+  allowStudentTheory: 'allowStudentTheory',
   updatedAt: 'updatedAt'
 } as const
 
 export type SystemSettingsScalarFieldEnum = (typeof SystemSettingsScalarFieldEnum)[keyof typeof SystemSettingsScalarFieldEnum]
+
+
+export const TheoryDocumentScalarFieldEnum = {
+  id: 'id',
+  subject: 'subject',
+  topic: 'topic',
+  fileName: 'fileName',
+  content: 'content',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TheoryDocumentScalarFieldEnum = (typeof TheoryDocumentScalarFieldEnum)[keyof typeof TheoryDocumentScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -390,7 +390,8 @@ export const ModelName = {
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   SharedSubject: 'SharedSubject',
-  SystemSettings: 'SystemSettings'
+  SystemSettings: 'SystemSettings',
+  TheoryDocument: 'TheoryDocument'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -406,7 +407,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "question" | "user" | "account" | "session" | "verificationToken" | "sharedSubject" | "systemSettings"
+    modelProps: "question" | "user" | "account" | "session" | "verificationToken" | "sharedSubject" | "systemSettings" | "theoryDocument"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -928,6 +929,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    TheoryDocument: {
+      payload: Prisma.$TheoryDocumentPayload<ExtArgs>
+      fields: Prisma.TheoryDocumentFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.TheoryDocumentFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TheoryDocumentPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.TheoryDocumentFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TheoryDocumentPayload>
+        }
+        findFirst: {
+          args: Prisma.TheoryDocumentFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TheoryDocumentPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.TheoryDocumentFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TheoryDocumentPayload>
+        }
+        findMany: {
+          args: Prisma.TheoryDocumentFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TheoryDocumentPayload>[]
+        }
+        create: {
+          args: Prisma.TheoryDocumentCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TheoryDocumentPayload>
+        }
+        createMany: {
+          args: Prisma.TheoryDocumentCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.TheoryDocumentCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TheoryDocumentPayload>[]
+        }
+        delete: {
+          args: Prisma.TheoryDocumentDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TheoryDocumentPayload>
+        }
+        update: {
+          args: Prisma.TheoryDocumentUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TheoryDocumentPayload>
+        }
+        deleteMany: {
+          args: Prisma.TheoryDocumentDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.TheoryDocumentUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.TheoryDocumentUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TheoryDocumentPayload>[]
+        }
+        upsert: {
+          args: Prisma.TheoryDocumentUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$TheoryDocumentPayload>
+        }
+        aggregate: {
+          args: Prisma.TheoryDocumentAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateTheoryDocument>
+        }
+        groupBy: {
+          args: Prisma.TheoryDocumentGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TheoryDocumentGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.TheoryDocumentCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.TheoryDocumentCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -977,6 +1052,7 @@ export const QuestionScalarFieldEnum = {
   correctOption: 'correctOption',
   subject: 'subject',
   topic: 'topic',
+  image: 'image',
   userId: 'userId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -1055,10 +1131,25 @@ export const SystemSettingsScalarFieldEnum = {
   id: 'id',
   allowPublicBank: 'allowPublicBank',
   allowStudentImport: 'allowStudentImport',
+  allowStudentTheory: 'allowStudentTheory',
   updatedAt: 'updatedAt'
 } as const
 
 export type SystemSettingsScalarFieldEnum = (typeof SystemSettingsScalarFieldEnum)[keyof typeof SystemSettingsScalarFieldEnum]
+
+
+export const TheoryDocumentScalarFieldEnum = {
+  id: 'id',
+  subject: 'subject',
+  topic: 'topic',
+  fileName: 'fileName',
+  content: 'content',
+  userId: 'userId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type TheoryDocumentScalarFieldEnum = (typeof TheoryDocumentScalarFieldEnum)[keyof typeof TheoryDocumentScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -1255,6 +1346,7 @@ export type GlobalOmitConfig = {
   verificationToken?: Prisma.VerificationTokenOmit
   sharedSubject?: Prisma.SharedSubjectOmit
   systemSettings?: Prisma.SystemSettingsOmit
+  theoryDocument?: Prisma.TheoryDocumentOmit
 }
 
 /* Types for Logging */

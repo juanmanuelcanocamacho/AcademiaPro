@@ -218,6 +218,7 @@ export type UserWhereInput = {
   sessions?: Prisma.SessionListRelationFilter
   questions?: Prisma.QuestionListRelationFilter
   sharedSubjects?: Prisma.SharedSubjectListRelationFilter
+  theoryDocuments?: Prisma.TheoryDocumentListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -234,6 +235,7 @@ export type UserOrderByWithRelationInput = {
   sessions?: Prisma.SessionOrderByRelationAggregateInput
   questions?: Prisma.QuestionOrderByRelationAggregateInput
   sharedSubjects?: Prisma.SharedSubjectOrderByRelationAggregateInput
+  theoryDocuments?: Prisma.TheoryDocumentOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -253,6 +255,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   sessions?: Prisma.SessionListRelationFilter
   questions?: Prisma.QuestionListRelationFilter
   sharedSubjects?: Prisma.SharedSubjectListRelationFilter
+  theoryDocuments?: Prisma.TheoryDocumentListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -299,6 +302,7 @@ export type UserCreateInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   questions?: Prisma.QuestionCreateNestedManyWithoutUserInput
   sharedSubjects?: Prisma.SharedSubjectCreateNestedManyWithoutAdminInput
+  theoryDocuments?: Prisma.TheoryDocumentCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -315,6 +319,7 @@ export type UserUncheckedCreateInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutUserInput
   sharedSubjects?: Prisma.SharedSubjectUncheckedCreateNestedManyWithoutAdminInput
+  theoryDocuments?: Prisma.TheoryDocumentUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -331,6 +336,7 @@ export type UserUpdateInput = {
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   questions?: Prisma.QuestionUpdateManyWithoutUserNestedInput
   sharedSubjects?: Prisma.SharedSubjectUpdateManyWithoutAdminNestedInput
+  theoryDocuments?: Prisma.TheoryDocumentUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -347,6 +353,7 @@ export type UserUncheckedUpdateInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutUserNestedInput
   sharedSubjects?: Prisma.SharedSubjectUncheckedUpdateManyWithoutAdminNestedInput
+  theoryDocuments?: Prisma.TheoryDocumentUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -493,6 +500,20 @@ export type UserUpdateOneRequiredWithoutSharedSubjectsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSharedSubjectsInput, Prisma.UserUpdateWithoutSharedSubjectsInput>, Prisma.UserUncheckedUpdateWithoutSharedSubjectsInput>
 }
 
+export type UserCreateNestedOneWithoutTheoryDocumentsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutTheoryDocumentsInput, Prisma.UserUncheckedCreateWithoutTheoryDocumentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutTheoryDocumentsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutTheoryDocumentsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutTheoryDocumentsInput, Prisma.UserUncheckedCreateWithoutTheoryDocumentsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutTheoryDocumentsInput
+  upsert?: Prisma.UserUpsertWithoutTheoryDocumentsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutTheoryDocumentsInput, Prisma.UserUpdateWithoutTheoryDocumentsInput>, Prisma.UserUncheckedUpdateWithoutTheoryDocumentsInput>
+}
+
 export type UserCreateWithoutQuestionsInput = {
   id?: string
   name?: string | null
@@ -506,6 +527,7 @@ export type UserCreateWithoutQuestionsInput = {
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   sharedSubjects?: Prisma.SharedSubjectCreateNestedManyWithoutAdminInput
+  theoryDocuments?: Prisma.TheoryDocumentCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutQuestionsInput = {
@@ -521,6 +543,7 @@ export type UserUncheckedCreateWithoutQuestionsInput = {
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   sharedSubjects?: Prisma.SharedSubjectUncheckedCreateNestedManyWithoutAdminInput
+  theoryDocuments?: Prisma.TheoryDocumentUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutQuestionsInput = {
@@ -552,6 +575,7 @@ export type UserUpdateWithoutQuestionsInput = {
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   sharedSubjects?: Prisma.SharedSubjectUpdateManyWithoutAdminNestedInput
+  theoryDocuments?: Prisma.TheoryDocumentUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutQuestionsInput = {
@@ -567,6 +591,7 @@ export type UserUncheckedUpdateWithoutQuestionsInput = {
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   sharedSubjects?: Prisma.SharedSubjectUncheckedUpdateManyWithoutAdminNestedInput
+  theoryDocuments?: Prisma.TheoryDocumentUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAccountsInput = {
@@ -582,6 +607,7 @@ export type UserCreateWithoutAccountsInput = {
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   questions?: Prisma.QuestionCreateNestedManyWithoutUserInput
   sharedSubjects?: Prisma.SharedSubjectCreateNestedManyWithoutAdminInput
+  theoryDocuments?: Prisma.TheoryDocumentCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAccountsInput = {
@@ -597,6 +623,7 @@ export type UserUncheckedCreateWithoutAccountsInput = {
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutUserInput
   sharedSubjects?: Prisma.SharedSubjectUncheckedCreateNestedManyWithoutAdminInput
+  theoryDocuments?: Prisma.TheoryDocumentUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAccountsInput = {
@@ -628,6 +655,7 @@ export type UserUpdateWithoutAccountsInput = {
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   questions?: Prisma.QuestionUpdateManyWithoutUserNestedInput
   sharedSubjects?: Prisma.SharedSubjectUpdateManyWithoutAdminNestedInput
+  theoryDocuments?: Prisma.TheoryDocumentUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAccountsInput = {
@@ -643,6 +671,7 @@ export type UserUncheckedUpdateWithoutAccountsInput = {
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutUserNestedInput
   sharedSubjects?: Prisma.SharedSubjectUncheckedUpdateManyWithoutAdminNestedInput
+  theoryDocuments?: Prisma.TheoryDocumentUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSessionsInput = {
@@ -658,6 +687,7 @@ export type UserCreateWithoutSessionsInput = {
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   questions?: Prisma.QuestionCreateNestedManyWithoutUserInput
   sharedSubjects?: Prisma.SharedSubjectCreateNestedManyWithoutAdminInput
+  theoryDocuments?: Prisma.TheoryDocumentCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSessionsInput = {
@@ -673,6 +703,7 @@ export type UserUncheckedCreateWithoutSessionsInput = {
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutUserInput
   sharedSubjects?: Prisma.SharedSubjectUncheckedCreateNestedManyWithoutAdminInput
+  theoryDocuments?: Prisma.TheoryDocumentUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSessionsInput = {
@@ -704,6 +735,7 @@ export type UserUpdateWithoutSessionsInput = {
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   questions?: Prisma.QuestionUpdateManyWithoutUserNestedInput
   sharedSubjects?: Prisma.SharedSubjectUpdateManyWithoutAdminNestedInput
+  theoryDocuments?: Prisma.TheoryDocumentUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSessionsInput = {
@@ -719,6 +751,7 @@ export type UserUncheckedUpdateWithoutSessionsInput = {
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutUserNestedInput
   sharedSubjects?: Prisma.SharedSubjectUncheckedUpdateManyWithoutAdminNestedInput
+  theoryDocuments?: Prisma.TheoryDocumentUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutSharedSubjectsInput = {
@@ -734,6 +767,7 @@ export type UserCreateWithoutSharedSubjectsInput = {
   accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
   questions?: Prisma.QuestionCreateNestedManyWithoutUserInput
+  theoryDocuments?: Prisma.TheoryDocumentCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutSharedSubjectsInput = {
@@ -749,6 +783,7 @@ export type UserUncheckedCreateWithoutSharedSubjectsInput = {
   accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
   sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutUserInput
+  theoryDocuments?: Prisma.TheoryDocumentUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutSharedSubjectsInput = {
@@ -780,6 +815,7 @@ export type UserUpdateWithoutSharedSubjectsInput = {
   accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
   questions?: Prisma.QuestionUpdateManyWithoutUserNestedInput
+  theoryDocuments?: Prisma.TheoryDocumentUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutSharedSubjectsInput = {
@@ -795,6 +831,87 @@ export type UserUncheckedUpdateWithoutSharedSubjectsInput = {
   accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
   sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutUserNestedInput
+  theoryDocuments?: Prisma.TheoryDocumentUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutTheoryDocumentsInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  password?: string | null
+  role?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionCreateNestedManyWithoutUserInput
+  questions?: Prisma.QuestionCreateNestedManyWithoutUserInput
+  sharedSubjects?: Prisma.SharedSubjectCreateNestedManyWithoutAdminInput
+}
+
+export type UserUncheckedCreateWithoutTheoryDocumentsInput = {
+  id?: string
+  name?: string | null
+  email?: string | null
+  emailVerified?: Date | string | null
+  image?: string | null
+  password?: string | null
+  role?: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  accounts?: Prisma.AccountUncheckedCreateNestedManyWithoutUserInput
+  sessions?: Prisma.SessionUncheckedCreateNestedManyWithoutUserInput
+  questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutUserInput
+  sharedSubjects?: Prisma.SharedSubjectUncheckedCreateNestedManyWithoutAdminInput
+}
+
+export type UserCreateOrConnectWithoutTheoryDocumentsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutTheoryDocumentsInput, Prisma.UserUncheckedCreateWithoutTheoryDocumentsInput>
+}
+
+export type UserUpsertWithoutTheoryDocumentsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutTheoryDocumentsInput, Prisma.UserUncheckedUpdateWithoutTheoryDocumentsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutTheoryDocumentsInput, Prisma.UserUncheckedCreateWithoutTheoryDocumentsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutTheoryDocumentsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutTheoryDocumentsInput, Prisma.UserUncheckedUpdateWithoutTheoryDocumentsInput>
+}
+
+export type UserUpdateWithoutTheoryDocumentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUpdateManyWithoutUserNestedInput
+  questions?: Prisma.QuestionUpdateManyWithoutUserNestedInput
+  sharedSubjects?: Prisma.SharedSubjectUpdateManyWithoutAdminNestedInput
+}
+
+export type UserUncheckedUpdateWithoutTheoryDocumentsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailVerified?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  image?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  accounts?: Prisma.AccountUncheckedUpdateManyWithoutUserNestedInput
+  sessions?: Prisma.SessionUncheckedUpdateManyWithoutUserNestedInput
+  questions?: Prisma.QuestionUncheckedUpdateManyWithoutUserNestedInput
+  sharedSubjects?: Prisma.SharedSubjectUncheckedUpdateManyWithoutAdminNestedInput
 }
 
 
@@ -807,6 +924,7 @@ export type UserCountOutputType = {
   sessions: number
   questions: number
   sharedSubjects: number
+  theoryDocuments: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -814,6 +932,7 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   sessions?: boolean | UserCountOutputTypeCountSessionsArgs
   questions?: boolean | UserCountOutputTypeCountQuestionsArgs
   sharedSubjects?: boolean | UserCountOutputTypeCountSharedSubjectsArgs
+  theoryDocuments?: boolean | UserCountOutputTypeCountTheoryDocumentsArgs
 }
 
 /**
@@ -854,6 +973,13 @@ export type UserCountOutputTypeCountSharedSubjectsArgs<ExtArgs extends runtime.T
   where?: Prisma.SharedSubjectWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountTheoryDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.TheoryDocumentWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -869,6 +995,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
   questions?: boolean | Prisma.User$questionsArgs<ExtArgs>
   sharedSubjects?: boolean | Prisma.User$sharedSubjectsArgs<ExtArgs>
+  theoryDocuments?: boolean | Prisma.User$theoryDocumentsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -914,6 +1041,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   sessions?: boolean | Prisma.User$sessionsArgs<ExtArgs>
   questions?: boolean | Prisma.User$questionsArgs<ExtArgs>
   sharedSubjects?: boolean | Prisma.User$sharedSubjectsArgs<ExtArgs>
+  theoryDocuments?: boolean | Prisma.User$theoryDocumentsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -926,6 +1054,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     sessions: Prisma.$SessionPayload<ExtArgs>[]
     questions: Prisma.$QuestionPayload<ExtArgs>[]
     sharedSubjects: Prisma.$SharedSubjectPayload<ExtArgs>[]
+    theoryDocuments: Prisma.$TheoryDocumentPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1335,6 +1464,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   sessions<T extends Prisma.User$sessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   questions<T extends Prisma.User$questionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$questionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   sharedSubjects<T extends Prisma.User$sharedSubjectsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$sharedSubjectsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SharedSubjectPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  theoryDocuments<T extends Prisma.User$theoryDocumentsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$theoryDocumentsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TheoryDocumentPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1854,6 +1984,30 @@ export type User$sharedSubjectsArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.SharedSubjectScalarFieldEnum | Prisma.SharedSubjectScalarFieldEnum[]
+}
+
+/**
+ * User.theoryDocuments
+ */
+export type User$theoryDocumentsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the TheoryDocument
+   */
+  select?: Prisma.TheoryDocumentSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the TheoryDocument
+   */
+  omit?: Prisma.TheoryDocumentOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.TheoryDocumentInclude<ExtArgs> | null
+  where?: Prisma.TheoryDocumentWhereInput
+  orderBy?: Prisma.TheoryDocumentOrderByWithRelationInput | Prisma.TheoryDocumentOrderByWithRelationInput[]
+  cursor?: Prisma.TheoryDocumentWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.TheoryDocumentScalarFieldEnum | Prisma.TheoryDocumentScalarFieldEnum[]
 }
 
 /**

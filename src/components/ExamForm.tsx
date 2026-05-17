@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle, ArrowRight, RotateCcw, Trophy, AlertTriangle, GraduationCap } from "lucide-react";
 import { Question } from "@/types";
+import TheoryChat from "./TheoryChat";
 
 export default function ExamForm({ questions: initialQuestions, subject }: { questions: Question[]; subject: string }) {
     const searchParams = useSearchParams();
@@ -36,6 +37,8 @@ export default function ExamForm({ questions: initialQuestions, subject }: { que
     const [promptResume, setPromptResume] = useState(false);
     const [tempSavedData, setTempSavedData] = useState<any>(null);
 
+    const [activeQuestionStatement, setActiveQuestionStatement] = useState<string>("");
+
     // Auto-save logic
     const storageKey = `exam_state_${subject}`;
 
@@ -53,7 +56,9 @@ export default function ExamForm({ questions: initialQuestions, subject }: { que
             }
         } else {
             // Apply shuffling on first load if no saved state exists
-            setQuestions(shuffleQuestions(initialQuestions));
+            const shuffled = shuffleQuestions(initialQuestions);
+            setQuestions(shuffled);
+            setActiveQuestionStatement(shuffled[0]?.statement || "");
         }
         setMounted(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -188,10 +193,21 @@ export default function ExamForm({ questions: initialQuestions, subject }: { que
             {/* Questions */}
             {questions.map((q, qi) => {
                 const opts = [q.optionA, q.optionB, q.optionC, q.optionD];
+                const isActive = activeQuestionStatement === q.statement;
                 return (
-                    <div key={q.id} className="bg-white border border-gray-200 rounded-2xl p-8">
+                    <div
+                        key={q.id}
+                        onClick={() => setActiveQuestionStatement(q.statement)}
+                        className={`bg-white border rounded-2xl p-8 transition-all duration-300 ${
+                            isActive
+                                ? "border-indigo-400 ring-2 ring-indigo-500/10 shadow-lg shadow-indigo-500/5"
+                                : "border-gray-200 hover:border-gray-300"
+                        }`}
+                    >
                         <div className="flex items-start gap-5 mb-7">
-                            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0 font-black text-indigo-700 text-sm">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-black text-sm transition-colors ${
+                                isActive ? "bg-indigo-600 text-white" : "bg-indigo-50 text-indigo-700"
+                            }`}>
                                 {qi + 1}
                             </div>
                             <div className="flex-1 space-y-4">
@@ -267,6 +283,8 @@ export default function ExamForm({ questions: initialQuestions, subject }: { que
                     </button>
                 </div>
             )}
+            {/* AI Theory Chat */}
+            <TheoryChat subject={subject} currentQuestion={activeQuestionStatement || questions[0]?.statement} />
         </div>
     );
 }

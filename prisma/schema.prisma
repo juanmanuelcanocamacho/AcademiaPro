@@ -40,6 +40,7 @@ model User {
   sessions      Session[]
   questions     Question[]
   sharedSubjects SharedSubject[]
+  theoryDocuments TheoryDocument[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -102,5 +103,19 @@ model SystemSettings {
   id                    Int      @id @default(1)
   allowPublicBank       Boolean  @default(true)
   allowStudentImport    Boolean  @default(false)
+  allowStudentTheory    Boolean  @default(false)
   updatedAt             DateTime @updatedAt
+}
+
+model TheoryDocument {
+  id        String   @id @default(cuid())
+  subject   String
+  topic     String?  // Unidad/Tema
+  fileName  String
+  content   String   // Texto completo extraído del PDF
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

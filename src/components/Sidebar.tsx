@@ -8,13 +8,14 @@ import {
     GraduationCap,
     Settings,
     Upload,
-    Plus,
     Database,
     LogOut,
     DownloadCloud,
     Share2,
     Menu,
-    X
+    X,
+    Wand2,
+    FileText
 } from "lucide-react";
 import { logout } from "@/actions/auth";
 import { useTransition } from "react";
@@ -45,20 +46,33 @@ export default function Sidebar({ session, settings }: { session: Session | null
 
     const navItems = [
         {
-            section: "Estudiante",
+            section: "Estudiar",
             links: [
                 { name: "Asignaturas", icon: BookOpen, href: "/exam", roles: ["STUDENT", "ADMIN"] },
-                ...(settings?.allowPublicBank !== false ? [{ name: "Banco Oficial (Copiar)", icon: DownloadCloud, href: "/public-bank", roles: ["STUDENT"] }] : []),
-                ...(settings?.allowStudentImport === true ? [{ name: "Añadir / Importar", icon: Plus, href: "/admin/import", roles: ["STUDENT"] }] : []),
+                ...(settings?.allowPublicBank !== false ? [{ name: "Banco Oficial", icon: DownloadCloud, href: "/public-bank", roles: ["STUDENT"] }] : []),
             ],
         },
         {
-            section: "Administración",
+            section: "Gestión",
             links: [
                 { name: "Banco de Preguntas", icon: Database, href: "/admin", roles: ["ADMIN"] },
-                { name: "Añadir / Importar", icon: Plus, href: "/admin/import", roles: ["ADMIN"] },
-                { name: "Compartir Asignaturas", icon: Share2, href: "/admin/share", roles: ["ADMIN"] },
-                { name: "Ajustes Globales", icon: Settings, href: "/admin/settings", roles: ["ADMIN"] },
+                { name: "Importar Preguntas", icon: Upload, href: "/admin/import", roles: ["ADMIN"] },
+                ...(settings?.allowStudentImport === true ? [{ name: "Importar Preguntas", icon: Upload, href: "/admin/import", roles: ["STUDENT"] }] : []),
+                { name: "Generar con IA", icon: Wand2, href: "/admin/generate", roles: ["ADMIN"] },
+            ],
+        },
+        {
+            section: "Teoría",
+            links: [
+                { name: "Mis Documentos", icon: FileText, href: "/admin/theory", roles: ["ADMIN"] },
+                ...(settings?.allowStudentTheory === true ? [{ name: "Mi Teoría", icon: FileText, href: "/admin/theory", roles: ["STUDENT"] }] : []),
+            ],
+        },
+        {
+            section: "Sistema",
+            links: [
+                { name: "Compartir", icon: Share2, href: "/admin/share", roles: ["ADMIN"] },
+                { name: "Ajustes", icon: Settings, href: "/admin/settings", roles: ["ADMIN"] },
             ],
         },
     ];
@@ -66,7 +80,9 @@ export default function Sidebar({ session, settings }: { session: Session | null
     const isActive = (href: string) => {
         if (href === "/exam") return pathname.startsWith("/exam");
         if (href === "/admin") return pathname === "/admin";
-        if (href === "/admin/import") return pathname.startsWith("/admin/import") || pathname.startsWith("/admin/new");
+        if (href === "/admin/import") return pathname.startsWith("/admin/import");
+        if (href === "/admin/generate") return pathname.startsWith("/admin/generate");
+        if (href === "/admin/theory") return pathname.startsWith("/admin/theory");
         if (href === "/admin/share") return pathname.startsWith("/admin/share");
         if (href === "/admin/settings") return pathname.startsWith("/admin/settings");
         return pathname.startsWith(href);
@@ -133,9 +149,9 @@ export default function Sidebar({ session, settings }: { session: Session | null
                                     {group.section}
                                 </p>
                                 <div className="flex flex-col gap-1">
-                                    {filteredLinks.map((item) => (
+                                    {filteredLinks.map((item, i) => (
                                         <Link
-                                            key={item.href}
+                                            key={`${item.href}-${i}`}
                                             href={item.href}
                                             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${isActive(item.href)
                                                 ? "bg-indigo-50/80 text-indigo-700 shadow-sm shadow-indigo-100/50"

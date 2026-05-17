@@ -38,6 +38,7 @@ export type SystemSettingsMinAggregateOutputType = {
   id: number | null
   allowPublicBank: boolean | null
   allowStudentImport: boolean | null
+  allowStudentTheory: boolean | null
   updatedAt: Date | null
 }
 
@@ -45,6 +46,7 @@ export type SystemSettingsMaxAggregateOutputType = {
   id: number | null
   allowPublicBank: boolean | null
   allowStudentImport: boolean | null
+  allowStudentTheory: boolean | null
   updatedAt: Date | null
 }
 
@@ -52,6 +54,7 @@ export type SystemSettingsCountAggregateOutputType = {
   id: number
   allowPublicBank: number
   allowStudentImport: number
+  allowStudentTheory: number
   updatedAt: number
   _all: number
 }
@@ -69,6 +72,7 @@ export type SystemSettingsMinAggregateInputType = {
   id?: true
   allowPublicBank?: true
   allowStudentImport?: true
+  allowStudentTheory?: true
   updatedAt?: true
 }
 
@@ -76,6 +80,7 @@ export type SystemSettingsMaxAggregateInputType = {
   id?: true
   allowPublicBank?: true
   allowStudentImport?: true
+  allowStudentTheory?: true
   updatedAt?: true
 }
 
@@ -83,6 +88,7 @@ export type SystemSettingsCountAggregateInputType = {
   id?: true
   allowPublicBank?: true
   allowStudentImport?: true
+  allowStudentTheory?: true
   updatedAt?: true
   _all?: true
 }
@@ -177,6 +183,7 @@ export type SystemSettingsGroupByOutputType = {
   id: number
   allowPublicBank: boolean
   allowStudentImport: boolean
+  allowStudentTheory: boolean
   updatedAt: Date
   _count: SystemSettingsCountAggregateOutputType | null
   _avg: SystemSettingsAvgAggregateOutputType | null
@@ -207,6 +214,7 @@ export type SystemSettingsWhereInput = {
   id?: Prisma.IntFilter<"SystemSettings"> | number
   allowPublicBank?: Prisma.BoolFilter<"SystemSettings"> | boolean
   allowStudentImport?: Prisma.BoolFilter<"SystemSettings"> | boolean
+  allowStudentTheory?: Prisma.BoolFilter<"SystemSettings"> | boolean
   updatedAt?: Prisma.DateTimeFilter<"SystemSettings"> | Date | string
 }
 
@@ -214,6 +222,7 @@ export type SystemSettingsOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   allowPublicBank?: Prisma.SortOrder
   allowStudentImport?: Prisma.SortOrder
+  allowStudentTheory?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -224,6 +233,7 @@ export type SystemSettingsWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.SystemSettingsWhereInput | Prisma.SystemSettingsWhereInput[]
   allowPublicBank?: Prisma.BoolFilter<"SystemSettings"> | boolean
   allowStudentImport?: Prisma.BoolFilter<"SystemSettings"> | boolean
+  allowStudentTheory?: Prisma.BoolFilter<"SystemSettings"> | boolean
   updatedAt?: Prisma.DateTimeFilter<"SystemSettings"> | Date | string
 }, "id">
 
@@ -231,6 +241,7 @@ export type SystemSettingsOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   allowPublicBank?: Prisma.SortOrder
   allowStudentImport?: Prisma.SortOrder
+  allowStudentTheory?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.SystemSettingsCountOrderByAggregateInput
   _avg?: Prisma.SystemSettingsAvgOrderByAggregateInput
@@ -246,6 +257,7 @@ export type SystemSettingsScalarWhereWithAggregatesInput = {
   id?: Prisma.IntWithAggregatesFilter<"SystemSettings"> | number
   allowPublicBank?: Prisma.BoolWithAggregatesFilter<"SystemSettings"> | boolean
   allowStudentImport?: Prisma.BoolWithAggregatesFilter<"SystemSettings"> | boolean
+  allowStudentTheory?: Prisma.BoolWithAggregatesFilter<"SystemSettings"> | boolean
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"SystemSettings"> | Date | string
 }
 
@@ -253,6 +265,7 @@ export type SystemSettingsCreateInput = {
   id?: number
   allowPublicBank?: boolean
   allowStudentImport?: boolean
+  allowStudentTheory?: boolean
   updatedAt?: Date | string
 }
 
@@ -260,6 +273,7 @@ export type SystemSettingsUncheckedCreateInput = {
   id?: number
   allowPublicBank?: boolean
   allowStudentImport?: boolean
+  allowStudentTheory?: boolean
   updatedAt?: Date | string
 }
 
@@ -267,6 +281,7 @@ export type SystemSettingsUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   allowPublicBank?: Prisma.BoolFieldUpdateOperationsInput | boolean
   allowStudentImport?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  allowStudentTheory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -274,6 +289,7 @@ export type SystemSettingsUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   allowPublicBank?: Prisma.BoolFieldUpdateOperationsInput | boolean
   allowStudentImport?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  allowStudentTheory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -281,6 +297,7 @@ export type SystemSettingsCreateManyInput = {
   id?: number
   allowPublicBank?: boolean
   allowStudentImport?: boolean
+  allowStudentTheory?: boolean
   updatedAt?: Date | string
 }
 
@@ -288,6 +305,7 @@ export type SystemSettingsUpdateManyMutationInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   allowPublicBank?: Prisma.BoolFieldUpdateOperationsInput | boolean
   allowStudentImport?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  allowStudentTheory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -295,6 +313,7 @@ export type SystemSettingsUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number
   allowPublicBank?: Prisma.BoolFieldUpdateOperationsInput | boolean
   allowStudentImport?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  allowStudentTheory?: Prisma.BoolFieldUpdateOperationsInput | boolean
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -302,6 +321,7 @@ export type SystemSettingsCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   allowPublicBank?: Prisma.SortOrder
   allowStudentImport?: Prisma.SortOrder
+  allowStudentTheory?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -313,6 +333,7 @@ export type SystemSettingsMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   allowPublicBank?: Prisma.SortOrder
   allowStudentImport?: Prisma.SortOrder
+  allowStudentTheory?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -320,6 +341,7 @@ export type SystemSettingsMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   allowPublicBank?: Prisma.SortOrder
   allowStudentImport?: Prisma.SortOrder
+  allowStudentTheory?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -337,6 +359,7 @@ export type SystemSettingsSelect<ExtArgs extends runtime.Types.Extensions.Intern
   id?: boolean
   allowPublicBank?: boolean
   allowStudentImport?: boolean
+  allowStudentTheory?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["systemSettings"]>
 
@@ -344,6 +367,7 @@ export type SystemSettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Type
   id?: boolean
   allowPublicBank?: boolean
   allowStudentImport?: boolean
+  allowStudentTheory?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["systemSettings"]>
 
@@ -351,6 +375,7 @@ export type SystemSettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Type
   id?: boolean
   allowPublicBank?: boolean
   allowStudentImport?: boolean
+  allowStudentTheory?: boolean
   updatedAt?: boolean
 }, ExtArgs["result"]["systemSettings"]>
 
@@ -358,10 +383,11 @@ export type SystemSettingsSelectScalar = {
   id?: boolean
   allowPublicBank?: boolean
   allowStudentImport?: boolean
+  allowStudentTheory?: boolean
   updatedAt?: boolean
 }
 
-export type SystemSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "allowPublicBank" | "allowStudentImport" | "updatedAt", ExtArgs["result"]["systemSettings"]>
+export type SystemSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "allowPublicBank" | "allowStudentImport" | "allowStudentTheory" | "updatedAt", ExtArgs["result"]["systemSettings"]>
 
 export type $SystemSettingsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "SystemSettings"
@@ -370,6 +396,7 @@ export type $SystemSettingsPayload<ExtArgs extends runtime.Types.Extensions.Inte
     id: number
     allowPublicBank: boolean
     allowStudentImport: boolean
+    allowStudentTheory: boolean
     updatedAt: Date
   }, ExtArgs["result"]["systemSettings"]>
   composites: {}
@@ -797,6 +824,7 @@ export interface SystemSettingsFieldRefs {
   readonly id: Prisma.FieldRef<"SystemSettings", 'Int'>
   readonly allowPublicBank: Prisma.FieldRef<"SystemSettings", 'Boolean'>
   readonly allowStudentImport: Prisma.FieldRef<"SystemSettings", 'Boolean'>
+  readonly allowStudentTheory: Prisma.FieldRef<"SystemSettings", 'Boolean'>
   readonly updatedAt: Prisma.FieldRef<"SystemSettings", 'DateTime'>
 }
     

@@ -14,7 +14,8 @@ export async function getSystemSettings() {
             data: {
                 id: 1,
                 allowPublicBank: true,
-                allowStudentImport: false
+                allowStudentImport: false,
+                allowStudentTheory: false
             }
         });
     }
@@ -22,7 +23,7 @@ export async function getSystemSettings() {
     return settings;
 }
 
-export async function updateSystemSettings(data: { allowPublicBank?: boolean, allowStudentImport?: boolean }) {
+export async function updateSystemSettings(data: { allowPublicBank?: boolean, allowStudentImport?: boolean, allowStudentTheory?: boolean }) {
     const session = await auth();
 
     if (session?.user?.role !== "ADMIN") {
@@ -36,7 +37,8 @@ export async function updateSystemSettings(data: { allowPublicBank?: boolean, al
             create: {
                 id: 1,
                 allowPublicBank: data.allowPublicBank ?? true,
-                allowStudentImport: data.allowStudentImport ?? false
+                allowStudentImport: data.allowStudentImport ?? false,
+                allowStudentTheory: data.allowStudentTheory ?? false
             }
         });
 
