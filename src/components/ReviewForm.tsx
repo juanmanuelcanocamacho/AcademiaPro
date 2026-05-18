@@ -7,6 +7,7 @@ import { CheckCircle2, XCircle, ArrowRight, RotateCcw, Trophy, CircleHelp } from
 import { Question } from "@/types";
 import TheoryChat from "./TheoryChat";
 import FormattedStatement from "./FormattedStatement";
+import { saveExamAttempt } from "@/actions/progress";
 
 export default function ReviewForm({ questions: initialQuestions, subject }: { questions: Question[]; subject: string }) {
     const searchParams = useSearchParams();
@@ -76,8 +77,25 @@ export default function ReviewForm({ questions: initialQuestions, subject }: { q
     };
 
     const handleNext = () => {
-        if (index < total - 1) setIndex((i) => i + 1);
-        else setDone(true);
+        if (index < total - 1) {
+            setIndex((i) => i + 1);
+        } else {
+            setDone(true);
+
+            // Guardar intento en la DB (fire-and-forget)
+            const finalCorrect = answers[current.id] !== undefined && answers[current.id] === current.correctOption
+                ? correct + (answers[current.id] === current.correctOption ? 0 : 0) // correct already updated in handleSelect
+                : correct;
+            const topic = searchParams.get("topic") || null;
+            saveExamAttempt({
+                subject,
+                topic: topic ? decodeURIComponent(topic) : null,
+                score: (correct / total) * 100,
+                correct: correct,
+                total: total,
+                mode: "repaso",
+            });
+        }
     };
 
     const reset = () => {

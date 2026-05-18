@@ -57,3 +57,8 @@ export type SystemSettings = Prisma.SystemSettingsModel
  * 
  */
 export type TheoryDocument = Prisma.TheoryDocumentModel
+/**
+ * Model ExamAttempt
+ * 
+ */
+export type ExamAttempt = Prisma.ExamAttemptModel

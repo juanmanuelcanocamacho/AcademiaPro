@@ -15,7 +15,8 @@ import {
     Menu,
     X,
     Wand2,
-    FileText
+    FileText,
+    BarChart3
 } from "lucide-react";
 import { logout } from "@/actions/auth";
 import { useTransition } from "react";
@@ -49,6 +50,7 @@ export default function Sidebar({ session, settings }: { session: Session | null
             section: "Estudiar",
             links: [
                 { name: "Asignaturas", icon: BookOpen, href: "/exam", roles: ["STUDENT", "ADMIN"] },
+                { name: "Mi Progreso", icon: BarChart3, href: "/progress", roles: ["STUDENT", "ADMIN"] },
                 ...(settings?.allowPublicBank !== false ? [{ name: "Banco Oficial", icon: DownloadCloud, href: "/public-bank", roles: ["STUDENT"] }] : []),
             ],
         },
@@ -85,6 +87,7 @@ export default function Sidebar({ session, settings }: { session: Session | null
         if (href === "/admin/theory") return pathname.startsWith("/admin/theory");
         if (href === "/admin/share") return pathname.startsWith("/admin/share");
         if (href === "/admin/settings") return pathname.startsWith("/admin/settings");
+        if (href === "/progress") return pathname.startsWith("/progress");
         return pathname.startsWith(href);
     };
 

@@ -41,6 +41,7 @@ model User {
   questions     Question[]
   sharedSubjects SharedSubject[]
   theoryDocuments TheoryDocument[]
+  examAttempts    ExamAttempt[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -116,6 +117,21 @@ model TheoryDocument {
   userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ExamAttempt {
+  id        String   @id @default(cuid())
+  userId    String
+  subject   String
+  topic     String?     // null = test de toda la asignatura
+  score     Float       // Porcentaje: 75.0 = 75%
+  correct   Int         // Nº de aciertos
+  total     Int         // Nº total de preguntas
+  mode      String      // "repaso" | "examen"
+  duration  Int?        // Duración en segundos (opcional)
+  createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -58,7 +58,8 @@ export const ModelName = {
   VerificationToken: 'VerificationToken',
   SharedSubject: 'SharedSubject',
   SystemSettings: 'SystemSettings',
-  TheoryDocument: 'TheoryDocument'
+  TheoryDocument: 'TheoryDocument',
+  ExamAttempt: 'ExamAttempt'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -185,6 +186,22 @@ export const TheoryDocumentScalarFieldEnum = {
 } as const
 
 export type TheoryDocumentScalarFieldEnum = (typeof TheoryDocumentScalarFieldEnum)[keyof typeof TheoryDocumentScalarFieldEnum]
+
+
+export const ExamAttemptScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  subject: 'subject',
+  topic: 'topic',
+  score: 'score',
+  correct: 'correct',
+  total: 'total',
+  mode: 'mode',
+  duration: 'duration',
+  createdAt: 'createdAt'
+} as const
+
+export type ExamAttemptScalarFieldEnum = (typeof ExamAttemptScalarFieldEnum)[keyof typeof ExamAttemptScalarFieldEnum]
 
 
 export const SortOrder = {

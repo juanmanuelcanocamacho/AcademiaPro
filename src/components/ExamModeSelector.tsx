@@ -8,7 +8,14 @@ import {
     ChevronRight,
     ChevronDown,
     LayoutGrid,
+    RotateCcw,
+    Loader2,
+    CheckCircle2,
+    AlertTriangle,
+    Circle,
+    Trash2,
 } from "lucide-react";
+import { getProgressBySubject, resetSubjectProgress, resetAllProgress, type SubjectProgress } from "@/actions/progress";
 
 type Mode = "repaso" | "examen";
 
@@ -25,12 +32,46 @@ function getSubjectAccentDark(index: number) {
     return accents[index % accents.length];
 }
 
+function TopicBadge({ status, bestScore }: { status: string; bestScore: number }) {
+    if (status === "passed") {
+        return (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-lg shrink-0">
+                <CheckCircle2 className="w-3 h-3" />
+                {Math.round(bestScore)}%
+            </span>
+        );
+    }
+    if (status === "failed") {
+        return (
+            <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-lg shrink-0">
+                <AlertTriangle className="w-3 h-3" />
+                {Math.round(bestScore)}%
+            </span>
+        );
+    }
+    return (
+        <span className="flex items-center gap-1 text-[10px] font-bold text-gray-400 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-lg shrink-0">
+            <Circle className="w-3 h-3" />
+            Pendiente
+        </span>
+    );
+}
+
 export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithTopics: { subject: string, topics: string[] }[] }) {
     const [mode, setMode] = useState<Mode>("repaso");
     const [randomQ, setRandomQ] = useState(true);
     const [randomA, setRandomA] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
+
+    // Progress state
+    const [progressMap, setProgressMap] = useState<Record<string, SubjectProgress>>({});
+    const [loadingProgress, setLoadingProgress] = useState(true);
+
+    // Reset confirmation modals
+    const [confirmResetSubject, setConfirmResetSubject] = useState<string | null>(null);
+    const [confirmResetAll, setConfirmResetAll] = useState(false);
+    const [resetting, setResetting] = useState(false);
 
     useEffect(() => {
         const savedMode = localStorage.getItem("examPref_mode") as Mode;
@@ -49,6 +90,47 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
         localStorage.setItem("examPref_randomQ", randomQ.toString());
         localStorage.setItem("examPref_randomA", randomA.toString());
     }, [mode, randomQ, randomA, mounted]);
+
+    // Fetch progress
+    useEffect(() => {
+        const fetchProgress = async () => {
+            setLoadingProgress(true);
+            const res = await getProgressBySubject();
+            if (res.success && res.progress) {
+                const map: Record<string, SubjectProgress> = {};
+                res.progress.forEach((p) => {
+                    map[p.subject] = p;
+                });
+                setProgressMap(map);
+            }
+            setLoadingProgress(false);
+        };
+        fetchProgress();
+    }, []);
+
+    const handleResetSubject = async (subject: string) => {
+        setResetting(true);
+        await resetSubjectProgress(subject);
+        // Refresh progress
+        const res = await getProgressBySubject();
+        if (res.success && res.progress) {
+            const map: Record<string, SubjectProgress> = {};
+            res.progress.forEach((p) => {
+                map[p.subject] = p;
+            });
+            setProgressMap(map);
+        }
+        setResetting(false);
+        setConfirmResetSubject(null);
+    };
+
+    const handleResetAll = async () => {
+        setResetting(true);
+        await resetAllProgress();
+        setProgressMap({});
+        setResetting(false);
+        setConfirmResetAll(false);
+    };
 
     return (
         <div className="space-y-6">
@@ -119,13 +201,21 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                     </label>
                 </div>
 
-                {/* Mode description */}
-                <div className="ml-auto hidden md:block text-right">
-                    <p className="text-xs font-bold text-gray-500">
+                {/* Mode description + Reset All */}
+                <div className="ml-auto hidden md:flex items-center gap-4">
+                    <p className="text-xs font-bold text-gray-500 text-right">
                         {mode === "repaso"
                             ? "Responde pregunta a pregunta. Corrección inmediata."
                             : "Responde todas. Se corrigen al terminar."}
                     </p>
+                    <button
+                        onClick={() => setConfirmResetAll(true)}
+                        className="flex items-center gap-1.5 px-3 py-2 text-[10px] font-bold text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl border border-transparent hover:border-red-100 transition-all"
+                        title="Reiniciar toda la trayectoria"
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Reiniciar todo
+                    </button>
                 </div>
             </div>
 
@@ -146,6 +236,13 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                         const baseHref = `/exam/${encodeURIComponent(subject)}?mode=${mode}&randomQ=${randomQ}&randomA=${randomA}`;
                         const accentClassDark = getSubjectAccentDark(i);
 
+                        // Progress data for this subject
+                        const sp = progressMap[subject];
+                        const passedCount = sp?.passedTopics || 0;
+                        const totalTopicCount = sp?.totalTopics || topics.length;
+                        const progressPct = totalTopicCount > 0 ? Math.round((passedCount / totalTopicCount) * 100) : 0;
+                        const hasAnyAttempts = sp?.totalAttempts > 0;
+
                         return (
                             <div key={subject} className="bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                                 {hasTopics ? (
@@ -157,10 +254,30 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                                         <div className="relative h-44 flex flex-col justify-end p-6 bg-slate-900 overflow-hidden w-full">
                                             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
                                             <GraduationCap className={`absolute -right-6 -top-4 w-32 h-32 opacity-10 transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-12 ${accentClassDark.split(' ')[1]}`} />
-                                            <div className={`relative z-10 border-l-4 pl-4 ${accentClassDark.split(' ')[0]}`}>
-                                                <h3 className="text-xl font-bold text-white leading-snug line-clamp-3 group-hover:text-gray-200 transition-colors">
-                                                    {subject}
-                                                </h3>
+                                            
+                                            {/* Stack title and progress info vertically to prevent overlap */}
+                                            <div className="relative z-10 flex flex-col gap-3 w-full">
+                                                <div className={`border-l-4 pl-4 ${accentClassDark.split(' ')[0]}`}>
+                                                    <h3 className="text-lg font-black text-white leading-snug line-clamp-2 group-hover:text-gray-200 transition-colors">
+                                                        {subject}
+                                                    </h3>
+                                                </div>
+
+                                                {/* Progress bar info */}
+                                                {hasAnyAttempts && (
+                                                    <div className="w-full pl-4">
+                                                        <div className="flex items-center justify-between mb-1.5">
+                                                            <span className="text-[10px] font-bold text-gray-400">{passedCount} de {totalTopicCount} temas</span>
+                                                            <span className="text-[10px] font-extrabold text-emerald-400">{progressPct}%</span>
+                                                        </div>
+                                                        <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                                                            <div
+                                                                className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                                                                style={{ width: `${progressPct}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
@@ -184,10 +301,30 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                                         <div className="relative h-44 flex flex-col justify-end p-6 bg-slate-900 overflow-hidden w-full">
                                             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
                                             <GraduationCap className={`absolute -right-6 -top-4 w-32 h-32 opacity-10 transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-12 ${accentClassDark.split(' ')[1]}`} />
-                                            <div className={`relative z-10 border-l-4 pl-4 ${accentClassDark.split(' ')[0]}`}>
-                                                <h3 className="text-xl font-bold text-white leading-snug line-clamp-3 group-hover:text-gray-200 transition-colors">
-                                                    {subject}
-                                                </h3>
+                                            
+                                            {/* Stack title and progress info vertically to prevent overlap */}
+                                            <div className="relative z-10 flex flex-col gap-3 w-full">
+                                                <div className={`border-l-4 pl-4 ${accentClassDark.split(' ')[0]}`}>
+                                                    <h3 className="text-lg font-black text-white leading-snug line-clamp-2 group-hover:text-gray-200 transition-colors">
+                                                        {subject}
+                                                    </h3>
+                                                </div>
+
+                                                {/* Progress bar info */}
+                                                {hasAnyAttempts && (
+                                                    <div className="w-full pl-4">
+                                                        <div className="flex items-center justify-between mb-1.5">
+                                                            <span className="text-[10px] font-bold text-gray-400">{passedCount} de {totalTopicCount} temas</span>
+                                                            <span className="text-[10px] font-extrabold text-emerald-400">{progressPct}%</span>
+                                                        </div>
+                                                        <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                                                            <div
+                                                                className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                                                                style={{ width: `${progressPct}%` }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="p-4 flex-1 flex w-full items-center justify-between bg-white border-t border-gray-100">
@@ -210,17 +347,107 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                                             <span>Todo el temario</span>
                                             <ChevronRight className="w-4 h-4 opacity-50 group-hover:opacity-100" />
                                         </Link>
-                                        {topics.map(topic => (
-                                            <Link key={topic} href={`${baseHref}&topic=${encodeURIComponent(topic)}`} className="flex items-center justify-between w-full p-3 rounded-xl bg-white border border-transparent text-sm font-medium text-slate-700 hover:border-indigo-200 hover:text-indigo-700 transition shadow-sm group">
-                                                <span>{topic}</span>
-                                                <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-indigo-400" />
-                                            </Link>
-                                        ))}
+                                        {topics.map(topic => {
+                                            // Find topic progress
+                                            const tp = sp?.topics.find(t => t.topic === topic);
+                                            const status = tp?.status || "not_started";
+                                            const bestScore = tp?.bestScore || 0;
+
+                                            return (
+                                                <Link key={topic} href={`${baseHref}&topic=${encodeURIComponent(topic)}`} className="flex items-center justify-between w-full p-3 rounded-xl bg-white border border-transparent text-sm font-medium text-slate-700 hover:border-indigo-200 hover:text-indigo-700 transition shadow-sm group">
+                                                    <span>{topic}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <TopicBadge status={status} bestScore={bestScore} />
+                                                        <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-indigo-400" />
+                                                    </div>
+                                                </Link>
+                                            );
+                                        })}
+
+                                        {/* Reset subject progress button */}
+                                        {hasAnyAttempts && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setConfirmResetSubject(subject);
+                                                }}
+                                                className="flex items-center gap-1.5 w-full justify-center mt-3 py-2.5 text-[10px] font-bold text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl border border-dashed border-gray-200 hover:border-red-200 transition-all"
+                                            >
+                                                <RotateCcw className="w-3 h-3" />
+                                                Reiniciar progreso de esta asignatura
+                                            </button>
+                                        )}
                                     </div>
                                 )}
                             </div>
                         );
                     })}
+                </div>
+            )}
+
+            {/* Modal: Confirm Reset Subject */}
+            {confirmResetSubject && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => !resetting && setConfirmResetSubject(null)}>
+                    <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                        <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5">
+                            <RotateCcw className="w-7 h-7 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-black text-gray-900 text-center mb-2">¿Reiniciar progreso?</h3>
+                        <p className="text-sm text-gray-500 text-center mb-6">
+                            Se borrarán todos los resultados de tests de <span className="font-bold text-gray-700">{confirmResetSubject}</span>.
+                            Esta acción no se puede deshacer.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setConfirmResetSubject(null)}
+                                disabled={resetting}
+                                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition disabled:opacity-40"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => handleResetSubject(confirmResetSubject)}
+                                disabled={resetting}
+                                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm transition shadow-md shadow-red-600/20 disabled:opacity-40 flex items-center justify-center gap-2"
+                            >
+                                {resetting ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                                {resetting ? "Reiniciando..." : "Reiniciar"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal: Confirm Reset All */}
+            {confirmResetAll && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => !resetting && setConfirmResetAll(false)}>
+                    <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                        <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-5">
+                            <Trash2 className="w-7 h-7 text-red-600" />
+                        </div>
+                        <h3 className="text-lg font-black text-gray-900 text-center mb-2">¿Reiniciar toda la trayectoria?</h3>
+                        <p className="text-sm text-gray-500 text-center mb-6">
+                            Se borrarán <span className="font-bold text-red-600">TODOS</span> los resultados de tests de <span className="font-bold text-gray-700">todas las asignaturas</span>.
+                            Esta acción no se puede deshacer.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setConfirmResetAll(false)}
+                                disabled={resetting}
+                                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition disabled:opacity-40"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleResetAll}
+                                disabled={resetting}
+                                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm transition shadow-md shadow-red-600/20 disabled:opacity-40 flex items-center justify-center gap-2"
+                            >
+                                {resetting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                                {resetting ? "Reiniciando..." : "Reiniciar todo"}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

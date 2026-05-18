@@ -7,6 +7,7 @@ import { CheckCircle2, XCircle, ArrowRight, RotateCcw, Trophy, AlertTriangle, Gr
 import { Question } from "@/types";
 import TheoryChat from "./TheoryChat";
 import FormattedStatement from "./FormattedStatement";
+import { saveExamAttempt } from "@/actions/progress";
 
 export default function ExamForm({ questions: initialQuestions, subject }: { questions: Question[]; subject: string }) {
     const searchParams = useSearchParams();
@@ -82,6 +83,17 @@ export default function ExamForm({ questions: initialQuestions, subject }: { que
         setScore({ correct: correctCount, total: questions.length });
         setSubmitted(true);
         window.scrollTo({ top: 0, behavior: "smooth" });
+
+        // Guardar intento en la DB (fire-and-forget)
+        const topic = searchParams.get("topic") || null;
+        saveExamAttempt({
+            subject,
+            topic: topic ? decodeURIComponent(topic) : null,
+            score: (correctCount / questions.length) * 100,
+            correct: correctCount,
+            total: questions.length,
+            mode: "examen",
+        });
     };
 
     if (!mounted) return <div className="min-h-[400px] flex animate-pulse bg-gray-50 rounded-2xl" />;
