@@ -157,3 +157,95 @@ export async function parseMoodlePDF(formData: FormData) {
         return { success: false, error: "Error procesando el PDF con IA. Asegúrate de tener la variable OPENAI_API_KEY configurada." };
     }
 }
+
+export async function parsePDFWithVision(images: string[]) {
+    try {
+        if (!images || images.length === 0) return { success: false, error: "No se proporcionaron imágenes del PDF." };
+
+        const chunkResults: any[] = [];
+        const CHUNK_SIZE = 3;
+
+        // Partimos en grupos de 3 páginas para evitar límites de tokens / payload
+        const chunks: string[][] = [];
+        for (let i = 0; i < images.length; i += CHUNK_SIZE) {
+            chunks.push(images.slice(i, i + CHUNK_SIZE));
+        }
+
+        console.log(`=== PROCESSING PDF WITH VISION IN ${chunks.length} CHUNKS ===`);
+
+        const questionSchema = z.object({
+            questions: z.array(z.object({
+                statement: z.string().describe(
+                    "El enunciado de la pregunta. Limpio y sin metadatos. " +
+                    "IMPORTANTE: Si en la imagen de la página hay algún código de programación, diagrama, tabla, gráfica o " +
+                    "esquema dentro de la pregunta, debes transcribir o describir detalladamente esa información y añadirla al final de la pregunta. " +
+                    "Si es código, formatéalo como bloque de código markdown (ej: ```javascript ... ```). Si es un diagrama, descríbelo en detalle."
+                ),
+                optionA: z.string().describe("El texto de la opción A, sin incluir la letra 'A.'"),
+                optionB: z.string().describe("El texto de la opción B, sin incluir la letra 'B.'"),
+                optionC: z.string().describe("El texto de la opción C, sin incluir la letra 'C.' (si no hay, usa '-')"),
+                optionD: z.string().describe("El texto de la opción D, sin incluir la letra 'D.' (si no hay, usa '-')"),
+                correctOption: z.number().describe(
+                    "Índice de la respuesta correcta (0 para A, 1 para B, 2 para C, 3 para D). " +
+                    "Identifícala buscando la marca visual de correcto en la imagen (por ejemplo, check verde, " +
+                    "opción en negrita, retroalimentación explícita 'La respuesta correcta es...', etc.)"
+                )
+            }))
+        });
+
+        for (let i = 0; i < chunks.length; i++) {
+            const chunk = chunks[i];
+
+            const imageParts = chunk.map(base64Str => {
+                const base64Data = base64Str.replace(/^data:image\/\w+;base64,/, "");
+                const buffer = Buffer.from(base64Data, 'base64');
+                return {
+                    type: 'image' as const,
+                    image: buffer
+                };
+            });
+
+            const { object } = await generateObject({
+                model: openai('gpt-4o-mini'),
+                schema: questionSchema,
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: `Analiza estas páginas de un examen de Moodle. Extrae todas las preguntas tipo test que veas completas.
+                                
+                                INSTRUCCIONES CLAVE:
+                                1. Si la pregunta contiene una captura de pantalla, diagrama, tabla, gráfica o un bloque de código, DEBES transcribir/describir su contenido fielmente e inyectarlo dentro del campo 'statement' (enunciado) usando formato markdown limpio (ej: bloques de código \`\`\`javascript ... \`\`\`).
+                                2. Determina con precisión la respuesta correcta (correctOption) identificando las marcas visuales de Moodle (como el check verde, la cruz roja en las incorrectas, el sombreado de la respuesta correcta, o el texto de retroalimentación 'La respuesta correcta es: ...').
+                                3. Ignora metadatos irrelevantes como 'Pregunta 1', 'Sin responder', 'Puntúa como 1,00' o textos de navegación.`
+                            },
+                            ...imageParts
+                        ]
+                    }
+                ]
+            });
+
+            if (object.questions && object.questions.length > 0) {
+                chunkResults.push(...object.questions);
+            }
+        }
+
+        // Deduplicar por enunciado por si acaso
+        const seenStatements = new Set<string>();
+        const allQuestions: any[] = [];
+        for (const q of chunkResults) {
+            const key = q.statement.substring(0, 80).trim().toLowerCase();
+            if (!seenStatements.has(key)) {
+                seenStatements.add(key);
+                allQuestions.push(q);
+            }
+        }
+
+        return { success: true, questions: allQuestions };
+    } catch (error) {
+        console.error("parsePDFWithVision error:", error);
+        return { success: false, error: "Error al procesar el PDF con visión artificial de OpenAI." };
+    }
+}

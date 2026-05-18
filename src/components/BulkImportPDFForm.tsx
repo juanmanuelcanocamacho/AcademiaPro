@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Upload, CheckCircle2, AlertCircle, FileText, Sparkles } from "lucide-react";
-import { parseMoodlePDF } from "@/actions/pdf";
+import { parsePDFWithVision } from "@/actions/pdf";
 import { importQuestions, getSubjectStats } from "@/actions/question";
 import { Question } from "@/types";
 import { toast } from "sonner";
@@ -13,6 +13,55 @@ type ParsedFile = {
     subject: string;
     topic: string;
     questions: any[];
+};
+
+// Helper function to load PDF.js dynamically in the browser
+const loadPdfJs = (): Promise<any> => {
+    return new Promise((resolve, reject) => {
+        if ((window as any).pdfjsLib) {
+            resolve((window as any).pdfjsLib);
+            return;
+        }
+
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+        script.onload = () => {
+            const pdfjsLib = (window as any).pdfjsLib;
+            pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+            resolve(pdfjsLib);
+        };
+        script.onerror = (err) => reject(err);
+        document.head.appendChild(script);
+    });
+};
+
+// Render each page of a PDF file to base64 JPEGs in the browser
+const convertPdfToImages = async (file: File, pdfjsLib: any): Promise<string[]> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const images: string[] = [];
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        // Render at scale 2.0 to ensure extremely sharp OCR results for the Vision model
+        const viewport = page.getViewport({ scale: 2.0 });
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const context = canvas.getContext("2d");
+
+        if (!context) continue;
+
+        await page.render({
+            canvasContext: context,
+            viewport: viewport
+        }).promise;
+
+        const base64 = canvas.toDataURL("image/jpeg", 0.85);
+        images.push(base64);
+    }
+
+    return images;
 };
 
 export default function BulkImportPDFForm() {
@@ -44,27 +93,42 @@ export default function BulkImportPDFForm() {
         if (files.length === 0) return;
         setIsParsing(true);
         try {
-            const formData = new FormData();
-            files.forEach(file => formData.append("file", file));
+            // Load PDF.js dynamically
+            const pdfjsLib = await loadPdfJs();
 
-            const res = await parseMoodlePDF(formData);
-            if (res.success && res.results) {
-                const newParsedFiles = res.results.map((r: any) => ({
-                    fileName: r.fileName,
-                    subject: "",
-                    topic: "",
-                    questions: r.questions
-                }));
-                setParsedFiles(newParsedFiles);
-                setActiveTab(0);
-                
-                const totalQs = newParsedFiles.reduce((acc: number, f: ParsedFile) => acc + f.questions.length, 0);
-                toast.success(`Se han extraído ${totalQs} preguntas de ${newParsedFiles.length} archivos.`);
-            } else {
-                toast.error(res.error || "No se pudo extraer las preguntas del PDF.");
+            const newParsedFiles: ParsedFile[] = [];
+
+            // Process each uploaded PDF
+            for (const file of files) {
+                toast.loading(`Renderizando páginas de ${file.name}...`, { id: "parse-toast" });
+                const pageImages = await convertPdfToImages(file, pdfjsLib);
+
+                toast.loading(`Analizando contenido de ${file.name} con Visión Artificial...`, { id: "parse-toast" });
+                const res = await parsePDFWithVision(pageImages);
+
+                if (res.success && res.questions) {
+                    newParsedFiles.push({
+                        fileName: file.name,
+                        subject: "",
+                        topic: "",
+                        questions: res.questions
+                    });
+                } else {
+                    toast.error(`Error en ${file.name}: ${res.error || "No se pudieron extraer preguntas."}`, { id: "parse-toast" });
+                    setIsParsing(false);
+                    return;
+                }
             }
+
+            toast.dismiss("parse-toast");
+            setParsedFiles(newParsedFiles);
+            setActiveTab(0);
+            
+            const totalQs = newParsedFiles.reduce((acc: number, f: ParsedFile) => acc + f.questions.length, 0);
+            toast.success(`¡Éxito! Se han extraído ${totalQs} preguntas de ${newParsedFiles.length} archivos.`);
         } catch (error) {
-            toast.error("Hubo un error al procesar el servidor.");
+            console.error("PDF client vision parse error:", error);
+            toast.error("Hubo un error al procesar el archivo. Revisa la consola para más detalles.", { id: "parse-toast" });
         } finally {
             setIsParsing(false);
         }
