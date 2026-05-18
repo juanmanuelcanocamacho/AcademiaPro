@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle, ArrowRight, RotateCcw, Trophy, AlertTriangle, GraduationCap } from "lucide-react";
 import { Question } from "@/types";
 import TheoryChat from "./TheoryChat";
+import FormattedStatement from "./FormattedStatement";
 
 export default function ExamForm({ questions: initialQuestions, subject }: { questions: Question[]; subject: string }) {
     const searchParams = useSearchParams();
@@ -211,7 +212,9 @@ export default function ExamForm({ questions: initialQuestions, subject }: { que
                                 {qi + 1}
                             </div>
                             <div className="flex-1 space-y-4">
-                                <h3 className="text-[15px] font-bold text-gray-800 leading-snug pt-1.5">{q.statement}</h3>
+                                <div className="text-[15px] font-bold text-gray-800 leading-snug pt-1.5">
+                                    <FormattedStatement text={q.statement} />
+                                </div>
                                 {q.image && (
                                     <div className="relative rounded-2xl overflow-hidden border border-gray-100 max-w-full sm:max-w-md bg-gray-50">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}

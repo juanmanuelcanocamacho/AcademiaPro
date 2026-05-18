@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle, ArrowRight, RotateCcw, Trophy, CircleHelp } from "lucide-react";
 import { Question } from "@/types";
 import TheoryChat from "./TheoryChat";
+import FormattedStatement from "./FormattedStatement";
 
 export default function ReviewForm({ questions: initialQuestions, subject }: { questions: Question[]; subject: string }) {
     const searchParams = useSearchParams();
@@ -232,7 +233,9 @@ export default function ReviewForm({ questions: initialQuestions, subject }: { q
                     <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center shrink-0 font-black text-indigo-700">
                         {index + 1}
                     </div>
-                    <h2 className="text-lg font-bold text-gray-800 leading-snug pt-1.5">{current.statement}</h2>
+                    <div className="text-lg font-bold text-gray-800 leading-snug pt-1.5 flex-1">
+                        <FormattedStatement text={current.statement} />
+                    </div>
                 </div>
 
                 <div className="space-y-3">
