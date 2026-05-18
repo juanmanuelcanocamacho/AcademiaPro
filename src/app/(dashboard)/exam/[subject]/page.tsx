@@ -1,4 +1,4 @@
-import { generateExamBySubject } from "@/actions/exam";
+import { generateExamBySubject, getSubjects } from "@/actions/exam";
 import ExamForm from "@/components/ExamForm";
 import ReviewForm from "@/components/ReviewForm";
 import Link from "next/link";
@@ -21,6 +21,24 @@ export default async function SubjectExamPage({
     const randomA = ra === "true";
 
     let { questions = [] } = await generateExamBySubject(subject, 1000, randomQ, topic);
+
+    // Fetch next topic/unit for quick transition
+    let nextTopic: string | null = null;
+    try {
+        const res = await getSubjects();
+        if (res.success && res.subjectsWithTopics) {
+            const currentSubjectData = res.subjectsWithTopics.find((s) => s.subject === subject);
+            const topicsList = currentSubjectData?.topics || [];
+            if (topic && topicsList.length > 0) {
+                const currentIndex = topicsList.indexOf(topic);
+                if (currentIndex !== -1 && currentIndex < topicsList.length - 1) {
+                    nextTopic = topicsList[currentIndex + 1];
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Error fetching next topic:", e);
+    }
 
     // Shuffle answer options if randomA
     if (randomA) {
@@ -66,8 +84,8 @@ export default async function SubjectExamPage({
             </div>
 
             {isRepaso
-                ? <ReviewForm questions={questions} subject={subject} />
-                : <ExamForm questions={questions} subject={subject} />}
+                ? <ReviewForm questions={questions} subject={subject} nextTopic={nextTopic} />
+                : <ExamForm questions={questions} subject={subject} nextTopic={nextTopic} />}
         </div>
     );
 }

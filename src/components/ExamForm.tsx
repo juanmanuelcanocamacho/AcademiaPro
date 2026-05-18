@@ -9,10 +9,23 @@ import TheoryChat from "./TheoryChat";
 import FormattedStatement from "./FormattedStatement";
 import { saveExamAttempt } from "@/actions/progress";
 
-export default function ExamForm({ questions: initialQuestions, subject }: { questions: Question[]; subject: string }) {
+export default function ExamForm({
+    questions: initialQuestions,
+    subject,
+    nextTopic,
+}: {
+    questions: Question[];
+    subject: string;
+    nextTopic?: string | null;
+}) {
     const searchParams = useSearchParams();
+    const mode = searchParams.get("mode") || "examen";
     const randomQ = searchParams.get("randomQ") !== "false";
     const randomA = searchParams.get("randomA") === "true";
+
+    const nextUnitUrl = nextTopic
+        ? `/exam/${encodeURIComponent(subject)}?mode=${mode}&randomQ=${randomQ}&randomA=${randomA}&topic=${encodeURIComponent(nextTopic)}`
+        : null;
 
     const shuffleQuestions = (qs: Question[]) => {
         let result = [...qs];
@@ -196,9 +209,19 @@ export default function ExamForm({ questions: initialQuestions, subject }: { que
                             setScore({ correct: 0, total: 0 });
                             localStorage.removeItem(storageKey);
                             window.scrollTo({ top: 0, behavior: "smooth" });
-                        }} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center gap-2">
+                        }} className={`px-6 py-2.5 font-bold rounded-xl text-sm transition flex items-center justify-center gap-2 ${
+                            nextUnitUrl
+                                ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                                : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                        }`}>
                             <RotateCcw className="w-4 h-4" /> Repetir simulacro
                         </button>
+
+                        {nextUnitUrl && (
+                            <Link href={nextUnitUrl} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 active:scale-95 duration-200">
+                                Siguiente Unidad <ArrowRight className="w-4 h-4" />
+                            </Link>
+                        )}
                     </div>
                 </div>
             )}
