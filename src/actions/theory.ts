@@ -20,37 +20,76 @@ export async function uploadTheory(formData: FormData) {
             }
         }
 
-        const file = formData.get("file") as File;
+        const files = formData.getAll("files") as File[];
         const subject = formData.get("subject") as string;
-        const topic = formData.get("topic") as string;
+        const singleTopic = formData.get("topic") as string;
 
-        if (!file || !subject) {
-            return { success: false, error: "Faltan datos: archivo y asignatura son obligatorios" };
+        if (!files || files.length === 0 || !subject) {
+            return { success: false, error: "Faltan datos: archivos y asignatura son obligatorios" };
         }
 
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const data = await pdfParse(buffer);
-        const content = data.text;
+        let totalChars = 0;
+        const uploadResults: { fileName: string; success: boolean; error?: string }[] = [];
 
-        if (!content || content.trim().length < 50) {
-            return { success: false, error: "No se pudo extraer texto suficiente del PDF. Asegúrate de que no sea un PDF escaneado." };
+        for (const file of files) {
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+                const data = await pdfParse(buffer);
+                const content = data.text;
+
+                if (!content || content.trim().length < 50) {
+                    uploadResults.push({
+                        fileName: file.name,
+                        success: false,
+                        error: "Texto insuficiente en el PDF."
+                    });
+                    continue;
+                }
+
+                // If multiple files are uploaded, use the file's name (without extension) as topic.
+                // If single file, use the custom topic inputted by the user if present, otherwise file's name.
+                const topic = files.length === 1 && singleTopic?.trim()
+                    ? singleTopic.trim()
+                    : file.name.replace(/\.pdf$/i, "").trim();
+
+                await prisma.theoryDocument.create({
+                    data: {
+                        subject,
+                        topic: topic || null,
+                        fileName: file.name,
+                        content,
+                        userId: session.user.id,
+                    },
+                });
+
+                totalChars += content.length;
+                uploadResults.push({ fileName: file.name, success: true });
+            } catch (fileErr) {
+                console.error(`Error processing file ${file.name}:`, fileErr);
+                uploadResults.push({
+                    fileName: file.name,
+                    success: false,
+                    error: "Error al analizar el archivo PDF."
+                });
+            }
         }
 
-        await prisma.theoryDocument.create({
-            data: {
-                subject,
-                topic: topic?.trim() || null,
-                fileName: file.name,
-                content,
-                userId: session.user.id,
-            },
-        });
+        const successCount = uploadResults.filter(r => r.success).length;
+        if (successCount === 0) {
+            return { success: false, error: "No se pudo extraer texto válido de ningún archivo PDF subido." };
+        }
 
-        return { success: true, chars: content.length };
+        return { 
+            success: true, 
+            count: successCount, 
+            total: files.length,
+            chars: totalChars,
+            results: uploadResults 
+        };
     } catch (error) {
         console.error("Error uploading theory:", error);
-        return { success: false, error: "Error al procesar el PDF de teoría." };
+        return { success: false, error: "Error al procesar la teoría." };
     }
 }
 

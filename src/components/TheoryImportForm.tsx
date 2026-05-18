@@ -3,13 +3,22 @@
 import { useState, useEffect } from "react";
 import { uploadTheory, getTheoryDocuments, deleteTheoryDocument } from "@/actions/theory";
 import { getSubjects } from "@/actions/exam";
-import { FileText, Upload, Trash2, Loader2, CheckCircle2, AlertCircle, BookOpen } from "lucide-react";
+import { FileText, Upload, Trash2, Loader2, CheckCircle2, AlertCircle, BookOpen, Layers, X } from "lucide-react";
+
+interface FileConfig {
+    file: File;
+    subject: string;
+    topic: string;
+    showNewSubjectInput: boolean;
+    customSubject: string;
+    showNewTopicInput: boolean;
+    customTopic: string;
+}
 
 export default function TheoryImportForm() {
-    const [subject, setSubject] = useState("");
-    const [topic, setTopic] = useState("");
-    const [file, setFile] = useState<File | null>(null);
+    const [fileConfigs, setFileConfigs] = useState<FileConfig[]>([]);
     const [uploading, setUploading] = useState(false);
+    const [currentUploadingIndex, setCurrentUploadingIndex] = useState<number>(0);
     const [result, setResult] = useState<{ success: boolean; message: string } | null>(null);
     const [documents, setDocuments] = useState<any[]>([]);
     const [loadingDocs, setLoadingDocs] = useState(true);
@@ -17,10 +26,9 @@ export default function TheoryImportForm() {
 
     // Subject/topic dropdown states
     const [availableSubjects, setAvailableSubjects] = useState<{ subject: string; topics: string[] }[]>([]);
-    const [showNewSubjectInput, setShowNewSubjectInput] = useState(false);
-    const [showNewTopicInput, setShowNewTopicInput] = useState(false);
-    const [customSubject, setCustomSubject] = useState("");
-    const [customTopic, setCustomTopic] = useState("");
+    const [masterSubject, setMasterSubject] = useState("");
+    const [showMasterNewSubject, setShowMasterNewSubject] = useState(false);
+    const [masterCustomSubject, setMasterCustomSubject] = useState("");
 
     const fetchDocuments = async () => {
         setLoadingDocs(true);
@@ -36,17 +44,9 @@ export default function TheoryImportForm() {
         if (res.success && res.subjectsWithTopics) {
             setAvailableSubjects(res.subjectsWithTopics);
             if (res.subjectsWithTopics.length > 0) {
-                const initialSub = res.subjectsWithTopics[0];
-                setSubject(initialSub.subject);
-                if (initialSub.topics.length > 0) {
-                    setTopic(initialSub.topics[0]);
-                } else {
-                    setTopic("");
-                    setShowNewTopicInput(true);
-                }
+                setMasterSubject(res.subjectsWithTopics[0].subject);
             } else {
-                setShowNewSubjectInput(true);
-                setShowNewTopicInput(true);
+                setShowMasterNewSubject(true);
             }
         }
     };
@@ -56,37 +56,117 @@ export default function TheoryImportForm() {
         loadSubjects();
     }, []);
 
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const selectedFiles = Array.from(e.target.files);
+            const defaultSubject = availableSubjects.length > 0 ? availableSubjects[0].subject : "";
+            
+            const configs: FileConfig[] = selectedFiles.map(file => {
+                const defaultTopic = file.name.replace(/\.pdf$/i, "").trim();
+                const subObj = availableSubjects.find(s => s.subject === defaultSubject);
+                const hasExistingTopics = subObj && subObj.topics.length > 0;
+                const defaultTopicSelect = hasExistingTopics ? subObj.topics[0] : "";
+
+                return {
+                    file,
+                    subject: defaultSubject,
+                    topic: defaultTopicSelect,
+                    showNewSubjectInput: defaultSubject === "",
+                    customSubject: "",
+                    showNewTopicInput: !hasExistingTopics,
+                    customTopic: defaultTopic,
+                };
+            });
+            setFileConfigs(configs);
+            setResult(null);
+        }
+    };
+
+    // Apply master subject to all files
+    const applyMasterSubjectToAll = (subj: string, isCustom = false, customVal = "") => {
+        setFileConfigs(prev => prev.map(cfg => {
+            const subObj = availableSubjects.find(s => s.subject === subj);
+            const hasExistingTopics = !isCustom && subObj && subObj.topics.length > 0;
+            const defaultTopicSelect = hasExistingTopics ? subObj.topics[0] : "";
+
+            return {
+                ...cfg,
+                subject: isCustom ? "" : subj,
+                showNewSubjectInput: isCustom,
+                customSubject: customVal,
+                showNewTopicInput: isCustom || !hasExistingTopics,
+                topic: defaultTopicSelect,
+            };
+        }));
+    };
+
+    const removeFile = (idxToRemove: number) => {
+        setFileConfigs(prev => prev.filter((_, idx) => idx !== idxToRemove));
+    };
+
     const handleUpload = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!file || !subject.trim()) return;
+        if (fileConfigs.length === 0) return;
 
         setUploading(true);
         setResult(null);
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("subject", subject.trim());
-        formData.append("topic", topic.trim());
+        let successCount = 0;
+        let totalChars = 0;
+        const results: { fileName: string; success: boolean; error?: string }[] = [];
 
-        const res = await uploadTheory(formData);
+        for (let i = 0; i < fileConfigs.length; i++) {
+            const config = fileConfigs[i];
+            setCurrentUploadingIndex(i);
 
-        if (res.success) {
+            const formData = new FormData();
+            formData.append("files", config.file);
+            
+            const finalSubject = config.showNewSubjectInput ? config.customSubject.trim() : config.subject.trim();
+            const finalTopic = config.showNewTopicInput ? config.customTopic.trim() : config.topic.trim();
+
+            formData.append("subject", finalSubject);
+            formData.append("topic", finalTopic);
+
+            try {
+                const res = await uploadTheory(formData);
+                if (res.success) {
+                    successCount++;
+                    totalChars += res.chars || 0;
+                    results.push({ fileName: config.file.name, success: true });
+                } else {
+                    results.push({ fileName: config.file.name, success: false, error: res.error });
+                }
+            } catch (err) {
+                results.push({ fileName: config.file.name, success: false, error: "Error de conexión." });
+            }
+        }
+
+        if (successCount === fileConfigs.length) {
             setResult({
                 success: true,
-                message: `Teoría subida correctamente. Se extrajeron ${res.chars?.toLocaleString()} caracteres.`,
+                message: `¡Subida completada con éxito! Se han procesado los ${successCount} archivos correctamente (${totalChars.toLocaleString()} caracteres extraídos).`,
             });
-            setFile(null);
-            setCustomTopic("");
-            // Reset file input
+            setFileConfigs([]);
             const input = document.getElementById("theory-file-input") as HTMLInputElement;
             if (input) input.value = "";
-            await fetchDocuments();
-            await loadSubjects();
+        } else if (successCount > 0) {
+            setResult({
+                success: true,
+                message: `Se subieron ${successCount} de ${fileConfigs.length} archivos de teoría correctamente. Por favor revisa los archivos fallidos.`,
+            });
+            // Keep only failed files in editor list so they can fix and retry
+            setFileConfigs(prev => prev.filter((_, idx) => !results[idx].success));
         } else {
-            setResult({ success: false, message: res.error || "Error desconocido" });
+            setResult({
+                success: false,
+                message: `Error al subir la teoría: ${results.map(r => `${r.fileName}: ${r.error}`).join(", ")}`,
+            });
         }
 
         setUploading(false);
+        await fetchDocuments();
+        await loadSubjects();
     };
 
     const handleDelete = async (id: string) => {
@@ -106,9 +186,6 @@ export default function TheoryImportForm() {
         return acc;
     }, {});
 
-    const currentSubjectObj = availableSubjects.find(s => s.subject === subject);
-    const subjectTopics = currentSubjectObj?.topics || [];
-
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 animate-in slide-in-from-bottom-4">
             <div className="flex items-center gap-3 mb-6">
@@ -118,171 +195,321 @@ export default function TheoryImportForm() {
                 <div>
                     <h2 className="text-lg font-black text-gray-900">Subir Teoría (PDF)</h2>
                     <p className="text-xs text-gray-400">
-                        Sube documentos de teoría para que la IA pueda responder preguntas basándose en ellos.
+                        Sube uno o varios archivos PDF y asígnalos a sus respectivas materias y unidades para entrenar la IA.
                     </p>
                 </div>
             </div>
 
-            <form onSubmit={handleUpload} className="space-y-4 mb-8">
-                {/* Asignatura Selector */}
-                <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1.5">Asignatura</label>
-                    {!showNewSubjectInput ? (
-                        <select
-                            value={subject}
-                            onChange={(e) => {
-                                if (e.target.value === "__NEW__") {
-                                    setShowNewSubjectInput(true);
-                                    setSubject("");
-                                    setShowNewTopicInput(true);
-                                    setTopic("");
-                                } else {
-                                    setSubject(e.target.value);
-                                    setShowNewTopicInput(false);
-                                    const subObj = availableSubjects.find(s => s.subject === e.target.value);
-                                    if (subObj && subObj.topics.length > 0) {
-                                        setTopic(subObj.topics[0]);
-                                    } else {
-                                        setTopic("");
-                                        setShowNewTopicInput(true);
-                                    }
-                                }
-                            }}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
-                        >
-                            {availableSubjects.map((s) => (
-                                <option key={s.subject} value={s.subject}>
-                                    {s.subject}
-                                </option>
-                            ))}
-                            <option value="__NEW__" className="text-indigo-600 font-bold">
-                                + Crear nueva asignatura...
-                            </option>
-                        </select>
-                    ) : (
-                        <div className="flex gap-2">
+            <form onSubmit={handleUpload} className="space-y-6 mb-8">
+                {fileConfigs.length === 0 ? (
+                    <div>
+                        <label className="flex flex-col items-center justify-center min-h-[160px] border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-indigo-400 transition group focus-within:ring-4 focus-within:ring-indigo-500/10">
                             <input
-                                type="text"
-                                value={customSubject}
-                                onChange={(e) => {
-                                    setCustomSubject(e.target.value);
-                                    setSubject(e.target.value);
-                                }}
-                                placeholder="Ej: Lenguaje de Marcas"
-                                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
+                                id="theory-file-input"
+                                type="file"
+                                accept=".pdf"
+                                multiple
+                                onChange={handleFileChange}
+                                className="sr-only"
                                 required
                             />
-                            {availableSubjects.length > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowNewSubjectInput(false);
-                                        setSubject(availableSubjects[0].subject);
-                                        setCustomSubject("");
-                                        setShowNewTopicInput(false);
-                                        const subObj = availableSubjects[0];
-                                        if (subObj.topics.length > 0) {
-                                            setTopic(subObj.topics[0]);
-                                        } else {
-                                            setTopic("");
-                                            setShowNewTopicInput(true);
-                                        }
-                                    }}
-                                    className="px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-bold transition"
-                                >
-                                    Cancelar
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                {/* Unidad Selector */}
-                <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1.5">Unidad / Tema</label>
-                    {!showNewTopicInput && subjectTopics.length > 0 ? (
-                        <select
-                            value={topic}
-                            onChange={(e) => {
-                                if (e.target.value === "__NEW__") {
-                                    setShowNewTopicInput(true);
-                                    setTopic("");
-                                } else {
-                                    setTopic(e.target.value);
-                                }
-                            }}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-800 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
-                        >
-                            {subjectTopics.map((t) => (
-                                <option key={t} value={t}>
-                                    {t}
-                                </option>
-                            ))}
-                            <option value="__NEW__" className="text-indigo-600 font-bold">
-                                + Crear nueva unidad...
-                            </option>
-                        </select>
-                    ) : (
-                        <div className="flex gap-2">
-                            <input
-                                type="text"
-                                value={customTopic}
-                                onChange={(e) => {
-                                    setCustomTopic(e.target.value);
-                                    setTopic(e.target.value);
-                                }}
-                                placeholder="Ej: Unidad 1, Tema 2, Flexbox..."
-                                className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
-                                required
-                            />
-                            {subjectTopics.length > 0 && (
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setShowNewTopicInput(false);
-                                        setTopic(subjectTopics[0]);
-                                        setCustomTopic("");
-                                    }}
-                                    className="px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-bold transition"
-                                >
-                                    Cancelar
-                                </button>
-                            )}
-                        </div>
-                    )}
-                </div>
-
-                <div>
-                    <label className="block text-xs font-bold text-gray-600 mb-1.5">Archivo PDF</label>
-                    <div className="relative">
-                        <input
-                            id="theory-file-input"
-                            type="file"
-                            accept=".pdf"
-                            onChange={(e) => setFile(e.target.files?.[0] || null)}
-                            className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-600 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:cursor-pointer focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
-                            required
-                        />
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <Upload className="w-8 h-8 text-gray-400 mb-3 group-hover:text-indigo-500 transition" />
+                                <p className="mb-2 text-sm text-gray-600 font-medium">
+                                    <span className="font-bold text-indigo-600">Haz clic para buscar</span> o arrastra tus PDFs aquí
+                                </p>
+                                <p className="text-xs text-gray-400">Puedes seleccionar uno o varios archivos PDF (.pdf)</p>
+                            </div>
+                        </label>
                     </div>
-                </div>
+                ) : (
+                    <div className="space-y-5 animate-in fade-in duration-300">
+                        {/* Master Subject Selection Shortcut */}
+                        {fileConfigs.length > 1 && (
+                            <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <Layers className="w-4 h-4 text-indigo-600" />
+                                    <span className="text-xs font-bold text-indigo-900">Asignar misma materia a todos:</span>
+                                </div>
+                                {!showMasterNewSubject ? (
+                                    <div className="flex gap-2">
+                                        <select
+                                            value={masterSubject}
+                                            onChange={(e) => {
+                                                if (e.target.value === "__NEW__") {
+                                                    setShowMasterNewSubject(true);
+                                                    setMasterSubject("");
+                                                    applyMasterSubjectToAll("", true, "");
+                                                } else {
+                                                    setMasterSubject(e.target.value);
+                                                    applyMasterSubjectToAll(e.target.value);
+                                                }
+                                            }}
+                                            className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
+                                        >
+                                            {availableSubjects.map((s) => (
+                                                <option key={s.subject} value={s.subject}>
+                                                    {s.subject}
+                                                </option>
+                                            ))}
+                                            <option value="__NEW__" className="text-indigo-600 font-extrabold">
+                                                + Crear nueva asignatura...
+                                            </option>
+                                        </select>
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={masterCustomSubject}
+                                            onChange={(e) => {
+                                                setMasterCustomSubject(e.target.value);
+                                                applyMasterSubjectToAll("", true, e.target.value);
+                                            }}
+                                            placeholder="Ej: Programación Móvil"
+                                            className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-indigo-500/30 outline-none transition"
+                                        />
+                                        {availableSubjects.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setShowMasterNewSubject(false);
+                                                    setMasterSubject(availableSubjects[0].subject);
+                                                    setMasterCustomSubject("");
+                                                    applyMasterSubjectToAll(availableSubjects[0].subject);
+                                                }}
+                                                className="px-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-bold transition"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
-                <button
-                    type="submit"
-                    disabled={uploading || !file || !subject.trim()}
-                    className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-3 rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-indigo-600/20"
-                >
-                    {uploading ? (
-                        <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Procesando PDF...
-                        </>
-                    ) : (
-                        <>
-                            <Upload className="w-4 h-4" />
-                            Subir Teoría
-                        </>
-                    )}
-                </button>
+                        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Asignación de unidades por archivo</span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setFileConfigs([]);
+                                    const input = document.getElementById("theory-file-input") as HTMLInputElement;
+                                    if (input) input.value = "";
+                                }}
+                                className="text-xs font-bold text-red-600 hover:underline flex items-center gap-1"
+                            >
+                                <X className="w-3.5 h-3.5" /> Limpiar todo
+                            </button>
+                        </div>
+
+                        {/* List of File Configuration Cards */}
+                        <div className="space-y-4 max-h-[460px] overflow-y-auto pr-1 scrollbar-thin">
+                            {fileConfigs.map((cfg, idx) => {
+                                const currentSubjectObj = availableSubjects.find(s => s.subject === cfg.subject);
+                                const subjectTopics = currentSubjectObj?.topics || [];
+                                
+                                return (
+                                    <div key={idx} className="border border-gray-200 hover:border-indigo-200 rounded-2xl p-5 bg-gray-50/50 space-y-4 relative transition-all shadow-sm">
+                                        <button
+                                            type="button"
+                                            onClick={() => removeFile(idx)}
+                                            className="absolute top-4 right-4 p-1 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition"
+                                            title="Quitar archivo"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+
+                                        {/* File Info */}
+                                        <div className="flex items-center gap-2.5 max-w-[85%]">
+                                            <FileText className="w-4 h-4 text-violet-500 shrink-0" />
+                                            <div className="min-w-0">
+                                                <p className="text-xs font-black text-gray-800 truncate" title={cfg.file.name}>{cfg.file.name}</p>
+                                                <p className="text-[10px] text-gray-400">{(cfg.file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Inputs Grid */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                                            {/* Subject Select */}
+                                            <div className="space-y-1">
+                                                <label className="text-[11px] font-bold text-gray-500 block">Asignatura:</label>
+                                                {!cfg.showNewSubjectInput ? (
+                                                    <select
+                                                        value={cfg.subject}
+                                                        onChange={(e) => {
+                                                            if (e.target.value === "__NEW__") {
+                                                                const newConfigs = [...fileConfigs];
+                                                                newConfigs[idx].showNewSubjectInput = true;
+                                                                newConfigs[idx].subject = "";
+                                                                newConfigs[idx].showNewTopicInput = true;
+                                                                newConfigs[idx].topic = "";
+                                                                setFileConfigs(newConfigs);
+                                                            } else {
+                                                                const newConfigs = [...fileConfigs];
+                                                                newConfigs[idx].subject = e.target.value;
+                                                                const subObj = availableSubjects.find(s => s.subject === e.target.value);
+                                                                const hasExisting = subObj && subObj.topics.length > 0;
+                                                                newConfigs[idx].showNewTopicInput = !hasExisting;
+                                                                newConfigs[idx].topic = hasExisting ? subObj.topics[0] : "";
+                                                                setFileConfigs(newConfigs);
+                                                            }
+                                                        }}
+                                                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
+                                                    >
+                                                        {availableSubjects.map((s) => (
+                                                            <option key={s.subject} value={s.subject}>
+                                                                {s.subject}
+                                                            </option>
+                                                        ))}
+                                                        <option value="__NEW__" className="text-indigo-600 font-bold">
+                                                            + Crear nueva asignatura...
+                                                        </option>
+                                                    </select>
+                                                ) : (
+                                                    <div className="flex gap-1.5">
+                                                        <input
+                                                            type="text"
+                                                            value={cfg.customSubject}
+                                                            onChange={(e) => {
+                                                                const newConfigs = [...fileConfigs];
+                                                                newConfigs[idx].customSubject = e.target.value;
+                                                                setFileConfigs(newConfigs);
+                                                            }}
+                                                            placeholder="Ej: Servidores web"
+                                                            className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500/30 outline-none transition"
+                                                            required
+                                                        />
+                                                        {availableSubjects.length > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const newConfigs = [...fileConfigs];
+                                                                    newConfigs[idx].showNewSubjectInput = false;
+                                                                    newConfigs[idx].subject = availableSubjects[0].subject;
+                                                                    newConfigs[idx].customSubject = "";
+                                                                    const subObj = availableSubjects.find(s => s.subject === availableSubjects[0].subject);
+                                                                    const hasExisting = subObj && subObj.topics.length > 0;
+                                                                    newConfigs[idx].showNewTopicInput = !hasExisting;
+                                                                    newConfigs[idx].topic = hasExisting ? subObj.topics[0] : "";
+                                                                    setFileConfigs(newConfigs);
+                                                                }}
+                                                                className="px-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-[10px] font-bold transition"
+                                                            >
+                                                                X
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Topic Selector / Input */}
+                                            <div className="space-y-1">
+                                                <label className="text-[11px] font-bold text-gray-500 block">Unidad / Tema:</label>
+                                                {!cfg.showNewTopicInput && subjectTopics.length > 0 ? (
+                                                    <select
+                                                        value={cfg.topic}
+                                                        onChange={(e) => {
+                                                            if (e.target.value === "__NEW__") {
+                                                                const newConfigs = [...fileConfigs];
+                                                                newConfigs[idx].showNewTopicInput = true;
+                                                                newConfigs[idx].topic = "";
+                                                                setFileConfigs(newConfigs);
+                                                            } else {
+                                                                const newConfigs = [...fileConfigs];
+                                                                newConfigs[idx].topic = e.target.value;
+                                                                setFileConfigs(newConfigs);
+                                                            }
+                                                        }}
+                                                        className="w-full bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
+                                                    >
+                                                        {subjectTopics.map((t) => (
+                                                            <option key={t} value={t}>
+                                                                {t}
+                                                            </option>
+                                                        ))}
+                                                        <option value="__NEW__" className="text-indigo-600 font-bold">
+                                                            + Crear nueva unidad...
+                                                        </option>
+                                                    </select>
+                                                ) : (
+                                                    <div className="flex gap-1.5">
+                                                        <input
+                                                            type="text"
+                                                            value={cfg.customTopic}
+                                                            onChange={(e) => {
+                                                                const newConfigs = [...fileConfigs];
+                                                                newConfigs[idx].customTopic = e.target.value;
+                                                                setFileConfigs(newConfigs);
+                                                            }}
+                                                            placeholder="Ej: Unidad 1, Configuración..."
+                                                            className="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
+                                                            required
+                                                        />
+                                                        {subjectTopics.length > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const newConfigs = [...fileConfigs];
+                                                                    newConfigs[idx].showNewTopicInput = false;
+                                                                    newConfigs[idx].topic = subjectTopics[0];
+                                                                    setFileConfigs(newConfigs);
+                                                                }}
+                                                                className="px-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-[10px] font-bold transition shrink-0"
+                                                                title="Volver al desplegable"
+                                                            >
+                                                                Cancelar
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Submit Actions */}
+                        <div className="space-y-3 pt-2">
+                            {uploading && (
+                                <div className="space-y-2 bg-indigo-50/50 rounded-xl p-4 border border-indigo-100/50">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs font-bold text-indigo-800 flex items-center gap-1.5">
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            Subiendo "{fileConfigs[currentUploadingIndex]?.file.name}"...
+                                        </span>
+                                        <span className="text-xs font-bold text-indigo-700">{currentUploadingIndex + 1} de {fileConfigs.length}</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-indigo-600 rounded-full transition-all duration-300"
+                                            style={{ width: `${((currentUploadingIndex) / fileConfigs.length) * 100}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={uploading || fileConfigs.length === 0}
+                                className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-3 rounded-xl transition disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-indigo-600/20"
+                            >
+                                {uploading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Subiendo Teoría...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="w-4 h-4" />
+                                        Subir y Procesar {fileConfigs.length} Archivos de Teoría
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </form>
 
             {/* Result */}
@@ -340,7 +567,7 @@ export default function TheoryImportForm() {
                                                         <p className="text-xs font-bold text-gray-700 truncate">{doc.fileName}</p>
                                                         <div className="flex items-center gap-2 mt-0.5">
                                                             {doc.topic && (
-                                                                <span className="text-[9px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded shrink-0">
+                                                                <span className="text-[9px] font-bold text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded shrink-0" title={doc.topic}>
                                                                     {doc.topic}
                                                                 </span>
                                                             )}
