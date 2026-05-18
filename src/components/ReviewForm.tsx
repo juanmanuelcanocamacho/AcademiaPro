@@ -90,6 +90,13 @@ export default function ReviewForm({ questions: initialQuestions, subject }: { q
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if (done || !current) return;
+
+            // Ignore shortcuts if the user is typing in any input field or textarea
+            const target = e.target as HTMLElement | null;
+            if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) {
+                return;
+            }
+
             const k = e.key.toLowerCase();
             if (!answered) {
                 if ((k === "1" || k === "a") && current.optionA) handleSelect(0);
