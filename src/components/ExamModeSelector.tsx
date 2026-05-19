@@ -16,6 +16,7 @@ import {
     Trash2,
 } from "lucide-react";
 import { getProgressBySubject, resetSubjectProgress, resetAllProgress, type SubjectProgress } from "@/actions/progress";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Mode = "repaso" | "examen";
 
@@ -229,7 +230,7 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                     <p className="text-sm text-gray-400">Añade preguntas desde el panel de administración.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-start">
+                <div className="columns-1 md:columns-2 xl:columns-3 gap-5 space-y-5">
                     {subjectsWithTopics.map(({ subject, topics }, i) => {
                         const hasTopics = topics.length > 0;
                         const isExpanded = expandedSubject === subject;
@@ -242,9 +243,13 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                         const totalTopicCount = sp?.totalTopics || topics.length;
                         const progressPct = totalTopicCount > 0 ? Math.round((passedCount / totalTopicCount) * 100) : 0;
                         const hasAnyAttempts = sp?.totalAttempts > 0;
-
                         return (
-                            <div key={subject} className="bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                            <motion.div
+                                key={subject}
+                                layout
+                                transition={{ type: "spring", stiffness: 260, damping: 28 }}
+                                className="break-inside-avoid bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300 mb-5"
+                            >
                                 {hasTopics ? (
                                     <button
                                         onClick={() => setExpandedSubject(isExpanded ? null : subject)}
@@ -255,7 +260,6 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                                             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
                                             <GraduationCap className={`absolute -right-6 -top-4 w-32 h-32 opacity-10 transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-12 ${accentClassDark.split(' ')[1]}`} />
                                             
-                                            {/* Stack title and progress info vertically to prevent overlap */}
                                             <div className="relative z-10 flex flex-col gap-3 w-full">
                                                 <div className={`border-l-4 pl-4 ${accentClassDark.split(' ')[0]}`}>
                                                     <h3 className="text-lg font-black text-white leading-snug line-clamp-2 group-hover:text-gray-200 transition-colors">
@@ -263,7 +267,6 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                                                     </h3>
                                                 </div>
 
-                                                {/* Progress bar info */}
                                                 {hasAnyAttempts && (
                                                     <div className="w-full pl-4">
                                                         <div className="flex items-center justify-between mb-1.5">
@@ -302,7 +305,6 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                                             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
                                             <GraduationCap className={`absolute -right-6 -top-4 w-32 h-32 opacity-10 transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-12 ${accentClassDark.split(' ')[1]}`} />
                                             
-                                            {/* Stack title and progress info vertically to prevent overlap */}
                                             <div className="relative z-10 flex flex-col gap-3 w-full">
                                                 <div className={`border-l-4 pl-4 ${accentClassDark.split(' ')[0]}`}>
                                                     <h3 className="text-lg font-black text-white leading-snug line-clamp-2 group-hover:text-gray-200 transition-colors">
@@ -310,7 +312,6 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                                                     </h3>
                                                 </div>
 
-                                                {/* Progress bar info */}
                                                 {hasAnyAttempts && (
                                                     <div className="w-full pl-4">
                                                         <div className="flex items-center justify-between mb-1.5">
@@ -339,47 +340,54 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                                     </Link>
                                 )}
 
-                                {/* Collapsible Topics Menu */}
-                                {hasTopics && isExpanded && (
-                                    <div className="border-t border-indigo-50 bg-indigo-50/30 p-4 space-y-2 animate-in slide-in-from-top-2 duration-300">
-                                        <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3 px-1">Elige temática</p>
-                                        <Link href={baseHref} className="flex items-center justify-between w-full p-3 rounded-xl bg-white border border-indigo-100 text-sm font-bold text-indigo-900 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition shadow-sm group">
-                                            <span>Todo el temario</span>
-                                            <ChevronRight className="w-4 h-4 opacity-50 group-hover:opacity-100" />
-                                        </Link>
-                                        {topics.map(topic => {
-                                            // Find topic progress
-                                            const tp = sp?.topics.find(t => t.topic === topic);
-                                            const status = tp?.status || "not_started";
-                                            const bestScore = tp?.bestScore || 0;
+                                {/* Collapsible Topics Menu — inside the card */}
+                                <AnimatePresence initial={false}>
+                                    {hasTopics && isExpanded && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: "auto", opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                                            className="border-t border-indigo-50 bg-indigo-50/30 p-4 space-y-2 overflow-hidden"
+                                        >
+                                            <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3 px-1">Elige temática</p>
+                                            <Link href={baseHref} className="flex items-center justify-between w-full p-3 rounded-xl bg-white border border-indigo-100 text-sm font-bold text-indigo-900 hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition shadow-sm group">
+                                                <span>Todo el temario</span>
+                                                <ChevronRight className="w-4 h-4 opacity-50 group-hover:opacity-100" />
+                                            </Link>
+                                            {topics.map(topic => {
+                                                const tp = sp?.topics.find(t => t.topic === topic);
+                                                const status = tp?.status || "not_started";
+                                                const bestScore = tp?.bestScore || 0;
 
-                                            return (
-                                                <Link key={topic} href={`${baseHref}&topic=${encodeURIComponent(topic)}`} className="flex items-center justify-between w-full p-3 rounded-xl bg-white border border-transparent text-sm font-medium text-slate-700 hover:border-indigo-200 hover:text-indigo-700 transition shadow-sm group">
-                                                    <span>{topic}</span>
-                                                    <div className="flex items-center gap-2">
-                                                        <TopicBadge status={status} bestScore={bestScore} />
-                                                        <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-indigo-400" />
-                                                    </div>
-                                                </Link>
-                                            );
-                                        })}
+                                                return (
+                                                    <Link key={topic} href={`${baseHref}&topic=${encodeURIComponent(topic)}`} className="flex items-center justify-between w-full p-3 rounded-xl bg-white border border-transparent text-sm font-medium text-slate-700 hover:border-indigo-200 hover:text-indigo-700 transition shadow-sm group">
+                                                        <span>{topic}</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <TopicBadge status={status} bestScore={bestScore} />
+                                                            <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-indigo-400" />
+                                                        </div>
+                                                    </Link>
+                                                );
+                                            })}
 
-                                        {/* Reset subject progress button */}
-                                        {hasAnyAttempts && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setConfirmResetSubject(subject);
-                                                }}
-                                                className="flex items-center gap-1.5 w-full justify-center mt-3 py-2.5 text-[10px] font-bold text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl border border-dashed border-gray-200 hover:border-red-200 transition-all"
-                                            >
-                                                <RotateCcw className="w-3 h-3" />
-                                                Reiniciar progreso de esta asignatura
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                                            {/* Reset subject progress button */}
+                                            {hasAnyAttempts && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setConfirmResetSubject(subject);
+                                                    }}
+                                                    className="flex items-center gap-1.5 w-full justify-center mt-3 py-2.5 text-[10px] font-bold text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl border border-dashed border-gray-200 hover:border-red-200 transition-all"
+                                                >
+                                                    <RotateCcw className="w-3 h-3" />
+                                                    Reiniciar progreso de esta asignatura
+                                                </button>
+                                            )}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </motion.div>
                         );
                     })}
                 </div>
