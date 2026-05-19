@@ -84,8 +84,8 @@ export default async function SubjectExamPage({
             </div>
 
             {isRepaso
-                ? <ReviewForm questions={questions} subject={subject} nextTopic={nextTopic} />
-                : <ExamForm questions={questions} subject={subject} nextTopic={nextTopic} />}
+                ? <ReviewForm key={`${subject}-${topic || "all"}-${mode}`} questions={questions} subject={subject} nextTopic={nextTopic} />
+                : <ExamForm key={`${subject}-${topic || "all"}-${mode}`} questions={questions} subject={subject} nextTopic={nextTopic} />}
         </div>
     );
 }

@@ -185,43 +185,100 @@ export default function ExamForm({
                             <p className="text-3xl font-black text-indigo-600">{(score.correct / score.total * 10).toFixed(1)}<span className="text-gray-300 text-xl">/10</span></p>
                         </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center mt-7">
-                        <Link href="/exam" className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm transition">Asignaturas</Link>
+                    <div className="space-y-3 mt-7">
+                        {/* Primary actions row: Up to 2 main buttons side by side */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                            {nextUnitUrl ? (
+                                <>
+                                    {score.correct < score.total ? (
+                                        <button onClick={() => {
+                                            const failed = questions.filter(q => answers[q.id] !== q.correctOption);
+                                            setQuestions(shuffleQuestions(failed));
+                                            setAnswers({});
+                                            setSubmitted(false);
+                                            setScore({ correct: 0, total: 0 });
+                                            localStorage.removeItem(storageKey);
+                                            window.scrollTo({ top: 0, behavior: "smooth" });
+                                        }} className="w-full px-5 py-3 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-xl text-sm transition flex items-center justify-center gap-2">
+                                            <AlertTriangle className="w-4 h-4" /> Repetir falladas ({score.total - score.correct})
+                                        </button>
+                                    ) : (
+                                        <button onClick={() => {
+                                            setQuestions(shuffleQuestions(initialQuestions));
+                                            setAnswers({});
+                                            setSubmitted(false);
+                                            setScore({ correct: 0, total: 0 });
+                                            localStorage.removeItem(storageKey);
+                                            window.scrollTo({ top: 0, behavior: "smooth" });
+                                        }} className="w-full px-5 py-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-sm transition flex items-center justify-center gap-2">
+                                            <RotateCcw className="w-4 h-4" /> Repetir simulacro
+                                        </button>
+                                    )}
+                                    <Link href={nextUnitUrl} className="w-full px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 active:scale-95 duration-200">
+                                        Siguiente Unidad <ArrowRight className="w-4 h-4" />
+                                    </Link>
+                                </>
+                            ) : (
+                                <>
+                                    {score.correct < score.total ? (
+                                        <>
+                                            <button onClick={() => {
+                                                const failed = questions.filter(q => answers[q.id] !== q.correctOption);
+                                                setQuestions(shuffleQuestions(failed));
+                                                setAnswers({});
+                                                setSubmitted(false);
+                                                setScore({ correct: 0, total: 0 });
+                                                localStorage.removeItem(storageKey);
+                                                window.scrollTo({ top: 0, behavior: "smooth" });
+                                            }} className="w-full px-5 py-3 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-xl text-sm transition flex items-center justify-center gap-2">
+                                                <AlertTriangle className="w-4 h-4" /> Repetir falladas ({score.total - score.correct})
+                                            </button>
+                                            <button onClick={() => {
+                                                setQuestions(shuffleQuestions(initialQuestions));
+                                                setAnswers({});
+                                                setSubmitted(false);
+                                                setScore({ correct: 0, total: 0 });
+                                                localStorage.removeItem(storageKey);
+                                                window.scrollTo({ top: 0, behavior: "smooth" });
+                                            }} className="w-full px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center gap-2">
+                                                <RotateCcw className="w-4 h-4" /> Repetir simulacro
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <button onClick={() => {
+                                            setQuestions(shuffleQuestions(initialQuestions));
+                                            setAnswers({});
+                                            setSubmitted(false);
+                                            setScore({ correct: 0, total: 0 });
+                                            localStorage.removeItem(storageKey);
+                                            window.scrollTo({ top: 0, behavior: "smooth" });
+                                        }} className="w-full px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center gap-2">
+                                            <RotateCcw className="w-4 h-4" /> Repetir simulacro
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </div>
 
-                        {score.correct < score.total && (
-                            <button onClick={() => {
-                                const failed = questions.filter(q => answers[q.id] !== q.correctOption);
-                                setQuestions(shuffleQuestions(failed));
-                                setAnswers({});
-                                setSubmitted(false);
-                                setScore({ correct: 0, total: 0 });
-                                localStorage.removeItem(storageKey);
-                                window.scrollTo({ top: 0, behavior: "smooth" });
-                            }} className="px-6 py-2.5 bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold rounded-xl text-sm transition flex items-center justify-center gap-2">
-                                <AlertTriangle className="w-4 h-4" /> Repetir falladas ({score.total - score.correct})
-                            </button>
-                        )}
-
-                        <button onClick={() => {
-                            setQuestions(shuffleQuestions(initialQuestions));
-                            setAnswers({});
-                            setSubmitted(false);
-                            setScore({ correct: 0, total: 0 });
-                            localStorage.removeItem(storageKey);
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                        }} className={`px-6 py-2.5 font-bold rounded-xl text-sm transition flex items-center justify-center gap-2 ${
-                            nextUnitUrl
-                                ? "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                                : "bg-indigo-600 hover:bg-indigo-700 text-white"
-                        }`}>
-                            <RotateCcw className="w-4 h-4" /> Repetir simulacro
-                        </button>
-
-                        {nextUnitUrl && (
-                            <Link href={nextUnitUrl} className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20 active:scale-95 duration-200">
-                                Siguiente Unidad <ArrowRight className="w-4 h-4" />
+                        {/* Secondary utilities row: Centered and compact */}
+                        <div className="flex justify-center gap-3 pt-1">
+                            <Link href="/exam" className="w-full sm:w-auto min-w-[140px] px-4 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-700 font-semibold rounded-xl text-xs border border-gray-200 transition flex items-center justify-center">
+                                Asignaturas
                             </Link>
-                        )}
+
+                            {nextUnitUrl && score.correct < score.total && (
+                                <button onClick={() => {
+                                    setQuestions(shuffleQuestions(initialQuestions));
+                                    setAnswers({});
+                                    setSubmitted(false);
+                                    setScore({ correct: 0, total: 0 });
+                                    localStorage.removeItem(storageKey);
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                }} className="w-full sm:w-auto min-w-[140px] px-4 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-500 hover:text-gray-700 font-semibold rounded-xl text-xs border border-gray-200 transition flex items-center justify-center gap-1.5">
+                                    <RotateCcw className="w-3.5 h-3.5" /> Repetir simulacro
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
