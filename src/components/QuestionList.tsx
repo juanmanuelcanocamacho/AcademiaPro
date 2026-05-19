@@ -3,6 +3,7 @@
 import { useTransition, useState, useOptimistic } from "react";
 import Link from "next/link";
 import { deleteQuestion, deleteQuestions, updateQuestion } from "@/actions/question";
+import { renameTopic } from "@/actions/topic";
 import {
     Pencil, Trash2, Database, Upload, Plus, ChevronDown, ChevronRight, Hash,
     CheckSquare, Square, X, Save, Tag
@@ -16,6 +17,38 @@ export default function QuestionList({ questions }: { questions: Question[] }) {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState<Partial<Question>>({});
+
+    const [editingTopicKey, setEditingTopicKey] = useState<string | null>(null); // "subjectName::oldTopicName"
+    const [editingTopicValue, setEditingTopicValue] = useState<string>("");
+    const [renamingPending, setRenamingPending] = useState<boolean>(false);
+
+    const handleRenameTopic = async (subject: string, oldTopic: string) => {
+        const newTopic = editingTopicValue.trim();
+        if (!newTopic) {
+            toast.error("El nombre de la unidad no puede estar vacío");
+            return;
+        }
+        if (oldTopic.trim() === newTopic) {
+            setEditingTopicKey(null);
+            return;
+        }
+
+        setRenamingPending(true);
+        try {
+            const res = await renameTopic(subject, oldTopic, newTopic);
+            if (res.success) {
+                toast.success(`Unidad renombrada a "${newTopic}" con éxito`);
+                setEditingTopicKey(null);
+                window.location.reload();
+            } else {
+                toast.error(res.error || "Error al renombrar");
+            }
+        } catch (e) {
+            toast.error("Error inesperado al renombrar");
+        } finally {
+            setRenamingPending(false);
+        }
+    };
 
     const [optimisticQuestions, addOptimisticAction] = useOptimistic(
         questions,
@@ -155,8 +188,90 @@ export default function QuestionList({ questions }: { questions: Question[] }) {
 
                         {/* Collapsible Content */}
                         {opened && (
-                            <div className="overflow-x-auto animate-in fade-in slide-in-from-top-2 duration-200">
-                                <table className="w-full text-left border-collapse min-w-full">
+                            <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                                {/* Topics / Units Manager */}
+                                {(() => {
+                                    const topics = Array.from(
+                                        new Set(subjectQuestions.map(q => q.topic).filter(Boolean))
+                                    ) as string[];
+
+                                    if (topics.length === 0) return null;
+
+                                    return (
+                                        <div className="p-4 bg-slate-50/50 border-b border-slate-100">
+                                            <div className="flex items-center gap-1.5 mb-2.5">
+                                                <Tag className="w-3.5 h-3.5 text-indigo-500" />
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Unidades detectadas en esta Asignatura (Haz clic en el lápiz para renombrar a nivel global)</span>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {topics.map((topic) => {
+                                                    const isEditingThis = editingTopicKey === `${subject}::${topic}`;
+
+                                                    return (
+                                                        <div
+                                                            key={topic}
+                                                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl border text-sm transition-all duration-200 ${
+                                                                isEditingThis
+                                                                    ? "bg-white border-indigo-400 shadow-sm"
+                                                                    : "bg-white hover:bg-indigo-50/20 border-slate-200 text-slate-700 hover:text-indigo-600 hover:border-indigo-100"
+                                                            }`}
+                                                        >
+                                                            {isEditingThis ? (
+                                                                <div className="flex items-center gap-1">
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editingTopicValue}
+                                                                        onChange={(e) => setEditingTopicValue(e.target.value)}
+                                                                        disabled={renamingPending}
+                                                                        className="border-0 p-0 text-sm font-semibold outline-none focus:ring-0 w-44 bg-transparent text-slate-800"
+                                                                        autoFocus
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === "Enter") handleRenameTopic(subject, topic);
+                                                                            if (e.key === "Escape") setEditingTopicKey(null);
+                                                                        }}
+                                                                    />
+                                                                    <button
+                                                                        onClick={() => handleRenameTopic(subject, topic)}
+                                                                        disabled={renamingPending}
+                                                                        className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+                                                                        title="Guardar"
+                                                                    >
+                                                                        <Save className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setEditingTopicKey(null)}
+                                                                        disabled={renamingPending}
+                                                                        className="p-1 text-slate-400 hover:bg-slate-100 rounded-lg transition"
+                                                                        title="Cancelar"
+                                                                    >
+                                                                        <X className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <span className="font-bold text-slate-800">{topic}</span>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setEditingTopicKey(`${subject}::${topic}`);
+                                                                            setEditingTopicValue(topic);
+                                                                        }}
+                                                                        className="text-slate-400 hover:text-indigo-600 p-0.5 rounded transition"
+                                                                        title="Renombrar Unidad"
+                                                                    >
+                                                                        <Pencil className="w-3.5 h-3.5" />
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse min-w-full">
                                     <thead>
                                         <tr className="border-b border-slate-200 text-slate-500 text-sm bg-white">
                                             <th className="p-4 font-medium w-10 text-center">
@@ -320,6 +435,7 @@ export default function QuestionList({ questions }: { questions: Question[] }) {
                                         })}
                                     </tbody>
                                 </table>
+                                </div>
                             </div>
                         )}
                     </div>
