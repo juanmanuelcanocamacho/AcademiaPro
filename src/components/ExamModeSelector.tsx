@@ -14,14 +14,15 @@ import {
     AlertTriangle,
     Circle,
     Trash2,
+    GripVertical,
 } from "lucide-react";
 import { getProgressBySubject, resetSubjectProgress, resetAllProgress, type SubjectProgress } from "@/actions/progress";
 import { motion, AnimatePresence } from "framer-motion";
 
 type Mode = "repaso" | "examen";
 
-// Sleek, dark tech accents
-function getSubjectAccentDark(index: number) {
+// Sleek, dark tech accents based on a stable subject hash
+function getSubjectAccentDark(subject: string) {
     const accents = [
         "border-indigo-500 text-indigo-400",
         "border-emerald-500 text-emerald-400",
@@ -30,7 +31,12 @@ function getSubjectAccentDark(index: number) {
         "border-cyan-500 text-cyan-400",
         "border-purple-500 text-purple-400",
     ];
-    return accents[index % accents.length];
+    let hash = 0;
+    for (let i = 0; i < subject.length; i++) {
+        hash = subject.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % accents.length;
+    return accents[index];
 }
 
 function TopicBadge({ status, bestScore }: { status: string; bestScore: number }) {
@@ -64,6 +70,64 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
     const [randomA, setRandomA] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [expandedSubject, setExpandedSubject] = useState<string | null>(null);
+
+    // Subject sorting & Drag and drop state
+    const [orderedSubjects, setOrderedSubjects] = useState<{ subject: string, topics: string[] }[]>(subjectsWithTopics);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+    // Initialize ordered subjects from localStorage or prop
+    useEffect(() => {
+        const savedOrder = localStorage.getItem("testly_subject_order");
+        if (savedOrder) {
+            try {
+                const orderNames: string[] = JSON.parse(savedOrder);
+                const sorted = [...subjectsWithTopics].sort((a, b) => {
+                    const idxA = orderNames.indexOf(a.subject);
+                    const idxB = orderNames.indexOf(b.subject);
+                    if (idxA === -1 && idxB === -1) return 0;
+                    if (idxA === -1) return 1;
+                    if (idxB === -1) return -1;
+                    return idxA - idxB;
+                });
+                setOrderedSubjects(sorted);
+            } catch (e) {
+                setOrderedSubjects(subjectsWithTopics);
+            }
+        } else {
+            setOrderedSubjects(subjectsWithTopics);
+        }
+    }, [subjectsWithTopics]);
+
+    const handleDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedIndex(index);
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", index.toString());
+        // Set a transparent image or style if desired, or just let default ghost drag work
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+    };
+
+    const handleDragEnter = (index: number) => {
+        if (draggedIndex === null || draggedIndex === index) return;
+        
+        const newOrder = [...orderedSubjects];
+        const draggedItem = newOrder[draggedIndex];
+        newOrder.splice(draggedIndex, 1);
+        newOrder.splice(index, 0, draggedItem);
+        
+        setDraggedIndex(index);
+        setOrderedSubjects(newOrder);
+        
+        // Persist order in localStorage
+        const orderNames = newOrder.map(s => s.subject);
+        localStorage.setItem("testly_subject_order", JSON.stringify(orderNames));
+    };
+
+    const handleDragEnd = () => {
+        setDraggedIndex(null);
+    };
 
     // Progress state
     const [progressMap, setProgressMap] = useState<Record<string, SubjectProgress>>({});
@@ -231,11 +295,11 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                 </div>
             ) : (
                 <div className="columns-1 md:columns-2 xl:columns-3 gap-5 space-y-5">
-                    {subjectsWithTopics.map(({ subject, topics }, i) => {
+                    {orderedSubjects.map(({ subject, topics }, index) => {
                         const hasTopics = topics.length > 0;
                         const isExpanded = expandedSubject === subject;
                         const baseHref = `/exam/${encodeURIComponent(subject)}?mode=${mode}&randomQ=${randomQ}&randomA=${randomA}`;
-                        const accentClassDark = getSubjectAccentDark(i);
+                        const accentClassDark = getSubjectAccentDark(subject);
 
                         // Progress data for this subject
                         const sp = progressMap[subject];
@@ -243,10 +307,22 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                         const totalTopicCount = sp?.totalTopics || topics.length;
                         const progressPct = totalTopicCount > 0 ? Math.round((passedCount / totalTopicCount) * 100) : 0;
                         const hasAnyAttempts = sp?.totalAttempts > 0;
+                        
+                        const isDragging = draggedIndex === index;
+
                         return (
                             <div
                                 key={subject}
-                                className="break-inside-avoid bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 mb-5"
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, index)}
+                                onDragOver={handleDragOver}
+                                onDragEnter={() => handleDragEnter(index)}
+                                onDragEnd={handleDragEnd}
+                                className={`break-inside-avoid bg-white border rounded-2xl overflow-hidden flex flex-col transition-all duration-300 mb-5 ${
+                                    isDragging 
+                                        ? "opacity-30 border-dashed border-indigo-300 scale-95 shadow-none bg-slate-50/50 cursor-grabbing" 
+                                        : "border-gray-200 hover:shadow-xl hover:-translate-y-0.5 cursor-grab active:cursor-grabbing"
+                                }`}
                             >
                                 {hasTopics ? (
                                     <button
@@ -258,6 +334,11 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                                             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
                                             <GraduationCap className={`absolute -right-6 -top-4 w-32 h-32 opacity-10 transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-12 ${accentClassDark.split(' ')[1]}`} />
                                             
+                                            {/* Grip Handle */}
+                                            <div className="absolute top-4 right-4 z-20 p-1.5 rounded-lg bg-white/5 border border-white/10 text-white/30 group-hover:text-white/80 group-hover:bg-white/10 transition-all">
+                                                <GripVertical className="w-4 h-4" />
+                                            </div>
+
                                             <div className="relative z-10 flex flex-col gap-3 w-full">
                                                 <div className={`border-l-4 pl-4 ${accentClassDark.split(' ')[0]}`}>
                                                     <h3 className="text-lg font-black text-white leading-snug line-clamp-2 group-hover:text-gray-200 transition-colors">
@@ -303,6 +384,11 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                                             <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)', backgroundSize: '16px 16px' }}></div>
                                             <GraduationCap className={`absolute -right-6 -top-4 w-32 h-32 opacity-10 transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-12 ${accentClassDark.split(' ')[1]}`} />
                                             
+                                            {/* Grip Handle */}
+                                            <div className="absolute top-4 right-4 z-20 p-1.5 rounded-lg bg-white/5 border border-white/10 text-white/30 group-hover:text-white/80 group-hover:bg-white/10 transition-all">
+                                                <GripVertical className="w-4 h-4" />
+                                            </div>
+
                                             <div className="relative z-10 flex flex-col gap-3 w-full">
                                                 <div className={`border-l-4 pl-4 ${accentClassDark.split(' ')[0]}`}>
                                                     <h3 className="text-lg font-black text-white leading-snug line-clamp-2 group-hover:text-gray-200 transition-colors">
