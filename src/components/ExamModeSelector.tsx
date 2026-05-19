@@ -244,11 +244,9 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                         const progressPct = totalTopicCount > 0 ? Math.round((passedCount / totalTopicCount) * 100) : 0;
                         const hasAnyAttempts = sp?.totalAttempts > 0;
                         return (
-                            <motion.div
+                            <div
                                 key={subject}
-                                layout
-                                transition={{ type: "spring", stiffness: 260, damping: 28 }}
-                                className="break-inside-avoid bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300 mb-5"
+                                className="break-inside-avoid bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 mb-5"
                             >
                                 {hasTopics ? (
                                     <button
@@ -387,7 +385,7 @@ export default function ExamModeSelector({ subjectsWithTopics }: { subjectsWithT
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
-                            </motion.div>
+                            </div>
                         );
                     })}
                 </div>
