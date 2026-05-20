@@ -129,3 +129,130 @@ body {
 .duration-700 {
   animation-duration: 700ms;
 }
+
+/* Zen Concentration Mode (distraction-free) */
+body.concentration-mode aside {
+  display: none !important;
+}
+
+body.concentration-mode .md\:hidden {
+  display: none !important;
+}
+
+body.concentration-mode .concentration-hide {
+  display: none !important;
+}
+
+body.concentration-mode main {
+  padding-top: 1.5rem !important;
+  padding-bottom: 3rem !important;
+}
+
+/* Premium Dark Mode Theme */
+.dark main {
+  background-color: #090d16 !important;
+  color: #f8fafc !important;
+}
+
+.dark .bg-white {
+  background-color: #121826 !important;
+  border-color: #1e293b !important;
+}
+
+.dark .bg-white\/95 {
+  background-color: rgba(18, 24, 38, 0.95) !important;
+  border-color: #1e293b !important;
+}
+
+.dark .text-gray-900, .dark .text-gray-800 {
+  color: #f8fafc !important;
+}
+
+.dark .text-gray-700, .dark .text-gray-650, .dark .text-gray-600 {
+  color: #cbd5e1 !important;
+}
+
+.dark .text-gray-500 {
+  color: #64748b !important;
+}
+
+.dark .text-gray-400 {
+  color: #475569 !important;
+}
+
+.dark .border-gray-200, .dark .border-gray-100 {
+  border-color: #1e293b !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: #182030 !important;
+  border-color: #1e293b !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: #1e293b !important;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: #182030 !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: #1e293b !important;
+}
+
+.dark kbd {
+  background-color: #182030 !important;
+  color: #94a3b8 !important;
+  border-color: #334155 !important;
+}
+
+/* Translucent Glowing Color Badges for High-Contrast Concentration in Dark Mode */
+.dark .bg-indigo-50 {
+  background-color: rgba(99, 102, 241, 0.15) !important;
+  color: #818cf8 !important;
+}
+
+.dark .text-indigo-700 {
+  color: #818cf8 !important;
+}
+
+.dark .border-indigo-500 {
+  border-color: #6366f1 !important;
+}
+
+.dark .border-indigo-200 {
+  border-color: rgba(99, 102, 241, 0.3) !important;
+}
+
+.dark .bg-emerald-50 {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  color: #34d399 !important;
+}
+
+.dark .bg-red-50 {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #f87171 !important;
+}
+
+.dark .bg-amber-50 {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+  color: #fbbf24 !important;
+}
+
+/* Sidebar Dark Theme integration when toggle is system-wide */
+.dark aside {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+.dark aside nav a:hover {
+  background-color: #1e293b !important;
+}
+
+.dark aside .bg-gray-50\/50 {
+  background-color: #1e293b !important;
+}

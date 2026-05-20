@@ -24,7 +24,7 @@ const renderMarkdown = (content: string) => {
 
     const lines = content.split("\n");
     return lines.map((line, i) => {
-        let trimmed = line.trim();
+        const trimmed = line.trim();
 
         // Robust headers checking (### Title or ###Title###)
         if (trimmed.startsWith("###")) {
@@ -86,8 +86,29 @@ const renderMarkdown = (content: string) => {
     });
 };
 
-export default function TheoryChat({ subject, currentQuestion }: { subject: string; currentQuestion?: string }) {
-    const [isOpen, setIsOpen] = useState(false);
+export default function TheoryChat({
+    subject,
+    currentQuestion,
+    isOpen: controlledIsOpen,
+    onOpenChange,
+    showFloatingButton = true,
+}: {
+    subject: string;
+    currentQuestion?: string;
+    isOpen?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    showFloatingButton?: boolean;
+}) {
+    const [localIsOpen, setLocalIsOpen] = useState(false);
+    const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : localIsOpen;
+    const setIsOpen = (val: boolean | ((curr: boolean) => boolean)) => {
+        const next = typeof val === "function" ? val(isOpen) : val;
+        if (onOpenChange) {
+            onOpenChange(next);
+        } else {
+            setLocalIsOpen(next);
+        }
+    };
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -201,7 +222,7 @@ export default function TheoryChat({ subject, currentQuestion }: { subject: stri
             } else {
                 setHasTheory(true);
             }
-        } catch (error) {
+        } catch {
             setMessages(prev => [
                 ...prev,
                 { role: "assistant", content: "Error al conectar con la IA. Inténtalo de nuevo." },
@@ -219,25 +240,19 @@ export default function TheoryChat({ subject, currentQuestion }: { subject: stri
     return (
         <>
             {/* Floating button */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
-                className={`fixed bottom-6 right-6 z-40 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl group ${
-                    isOpen
-                        ? "bg-gray-900 text-white shadow-gray-900/30"
-                        : "bg-gradient-to-br from-indigo-500 to-sky-500 text-white shadow-indigo-500/30"
-                }`}
-                title="Asistente de Teoría IA"
-            >
-                {isOpen ? (
-                    <X className="w-5 h-5" />
-                ) : (
-                    <>
-                        <Sparkles className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                        {/* Notification dot */}
-                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-white animate-pulse" />
-                    </>
-                )}
-            </button>
+            {showFloatingButton && (
+                <button
+                    onClick={() => setIsOpen(!isOpen)}
+                    className={`fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full flex items-center justify-center border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-400 hover:text-indigo-600 shadow-sm transition-all duration-300 hover:-translate-y-0.5 group`}
+                    title="Asistente de Teoría IA"
+                >
+                    {isOpen ? (
+                        <X className="w-4 h-4" />
+                    ) : (
+                        <Sparkles className="w-4 h-4 group-hover:scale-110 transition-transform text-indigo-500" />
+                    )}
+                </button>
+            )}
 
             {/* Chat panel */}
             <div

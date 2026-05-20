@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, XCircle, ArrowRight, RotateCcw, Trophy, AlertTriangle, GraduationCap } from "lucide-react";
@@ -50,12 +50,163 @@ export default function ExamForm({
     const [score, setScore] = useState({ correct: 0, total: 0 });
     const [mounted, setMounted] = useState(false);
     const [promptResume, setPromptResume] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [tempSavedData, setTempSavedData] = useState<any>(null);
 
     const [activeQuestionStatement, setActiveQuestionStatement] = useState<string>("");
+    
+    // New features states
+    const [autoAdvance, setAutoAdvance] = useState(true);
+    const [autoAdvanceDelay, setAutoAdvanceDelay] = useState(800); // 800ms default for smooth scroll transition
+    const [concentrationMode, setConcentrationMode] = useState(false);
+    const [skippedQuestions, setSkippedQuestions] = useState<Set<string>>(new Set());
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const [showDropdown, setShowDropdown] = useState(false);
+    const [showChatButton, setShowChatButton] = useState(true);
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const autoAdvanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const showToast = (msg: string) => {
+        setToastMessage(msg);
+        setTimeout(() => {
+            setToastMessage((curr) => curr === msg ? null : curr);
+        }, 3500);
+    };
 
     // Auto-save logic
     const storageKey = `exam_state_${subject}`;
+
+    // Load preferences on mount
+    useEffect(() => {
+        const savedAuto = localStorage.getItem("exam_auto_advance");
+        if (savedAuto !== null) {
+            setAutoAdvance(savedAuto === "true");
+        }
+        const savedDelay = localStorage.getItem("exam_auto_advance_delay");
+        if (savedDelay !== null) {
+            setAutoAdvanceDelay(Number(savedDelay));
+        }
+        const savedConcentration = localStorage.getItem("exam_concentration_mode") === "true";
+        setConcentrationMode(savedConcentration);
+        if (savedConcentration) {
+            document.body.classList.add("concentration-mode");
+        }
+        const savedChatBtn = localStorage.getItem("exam_show_chat_button");
+        if (savedChatBtn !== null) {
+            setShowChatButton(savedChatBtn === "true");
+        }
+        return () => {
+            document.body.classList.remove("concentration-mode");
+            if (autoAdvanceTimeoutRef.current) clearTimeout(autoAdvanceTimeoutRef.current);
+        };
+    }, []);
+
+    const toggleConcentrationMode = () => {
+        setConcentrationMode(prev => {
+            const next = !prev;
+            localStorage.setItem("exam_concentration_mode", String(next));
+            if (next) {
+                document.body.classList.add("concentration-mode");
+            } else {
+                document.body.classList.remove("concentration-mode");
+            }
+            return next;
+        });
+    };
+
+    // Click outside dropdown handler
+    useEffect(() => {
+        const handleOutsideClick = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setShowDropdown(false);
+            }
+        };
+        if (showDropdown) {
+            document.addEventListener("mousedown", handleOutsideClick);
+        }
+        return () => {
+            document.removeEventListener("mousedown", handleOutsideClick);
+        };
+    }, [showDropdown]);
+
+    const advanceFrom = (fromIndex: number, updatedAnswers: Record<string, number>, isSkip = false) => {
+        if (isSkip) {
+            setSkippedQuestions((prev) => {
+                const next = new Set(prev);
+                next.add(questions[fromIndex].id);
+                return next;
+            });
+        } else {
+            setSkippedQuestions((prev) => {
+                const next = new Set(prev);
+                next.delete(questions[fromIndex].id);
+                return next;
+            });
+        }
+
+        const nextIndex = fromIndex + 1;
+        if (nextIndex < questions.length) {
+            const nextQ = questions[nextIndex];
+            setActiveQuestionStatement(nextQ.statement);
+            setTimeout(() => {
+                const container = document.getElementById(`question-container-${nextQ.id}`);
+                if (container) {
+                    container.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+            }, 150);
+        } else {
+            // Reached the end! Let's redirect to the first unanswered/skipped question
+            const firstUnansweredIndex = questions.findIndex(q => updatedAnswers[q.id] === undefined);
+            if (firstUnansweredIndex !== -1 && firstUnansweredIndex !== fromIndex) {
+                const targetQ = questions[firstUnansweredIndex];
+                setActiveQuestionStatement(targetQ.statement);
+                showToast("¡Has llegado al final! Te redirigimos a las preguntas pendientes.");
+                setTimeout(() => {
+                    const container = document.getElementById(`question-container-${targetQ.id}`);
+                    if (container) {
+                        container.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }
+                }, 150);
+            } else {
+                // If everything is completed
+                if (Object.keys(updatedAnswers).length === questions.length) {
+                    showToast("¡Has completado todas las preguntas! Ya puedes evaluar tu examen.");
+                }
+            }
+        }
+    };
+
+    // Spacebar listener to skip questions
+    useEffect(() => {
+        if (submitted || promptResume || !mounted) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const activeEl = document.activeElement;
+            if (activeEl && (
+                activeEl.tagName === "INPUT" ||
+                activeEl.tagName === "TEXTAREA" ||
+                (activeEl as HTMLElement).isContentEditable
+            )) {
+                return;
+            }
+
+            if (e.key === " ") {
+                e.preventDefault(); // Prevent standard page scroll down
+
+                const currentIndex = questions.findIndex(q => q.statement === activeQuestionStatement);
+                if (currentIndex !== -1) {
+                    advanceFrom(currentIndex, answers, true);
+                }
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeQuestionStatement, questions, answers, submitted, promptResume, mounted]);
 
     useEffect(() => {
         const savedData = localStorage.getItem(storageKey);
@@ -66,7 +217,7 @@ export default function ExamForm({
                     setTempSavedData(parsed);
                     setPromptResume(true);
                 }
-            } catch (e) {
+            } catch {
                 console.error("Failed to parse saved exam state");
             }
         } else {
@@ -86,7 +237,26 @@ export default function ExamForm({
 
     const handleSelect = (qId: string, opt: number) => {
         if (submitted) return;
-        setAnswers((p) => ({ ...p, [qId]: opt }));
+        
+        const updatedAnswers = { ...answers, [qId]: opt };
+        setAnswers(updatedAnswers);
+
+        // Remove from skipped list since it's answered
+        setSkippedQuestions((prev) => {
+            const next = new Set(prev);
+            next.delete(qId);
+            return next;
+        });
+
+        if (autoAdvance) {
+            if (autoAdvanceTimeoutRef.current) clearTimeout(autoAdvanceTimeoutRef.current);
+            const currentIndex = questions.findIndex(q => q.id === qId);
+            if (currentIndex !== -1) {
+                autoAdvanceTimeoutRef.current = setTimeout(() => {
+                    advanceFrom(currentIndex, updatedAnswers, false);
+                }, autoAdvanceDelay);
+            }
+        }
     };
 
     const submit = () => {
@@ -128,7 +298,14 @@ export default function ExamForm({
                         Empezar de cero
                     </button>
                     <button onClick={() => {
-                        if (tempSavedData.questions) setQuestions(tempSavedData.questions);
+                        if (tempSavedData.questions) {
+                            setQuestions(tempSavedData.questions);
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            const data = tempSavedData as any;
+                            const savedAnswers = data.answers || {};
+                            const firstUnanswered = data.questions.find((q: Question) => savedAnswers[q.id] === undefined);
+                            setActiveQuestionStatement(firstUnanswered?.statement || data.questions[0]?.statement || "");
+                        }
                         if (tempSavedData.answers) setAnswers(tempSavedData.answers);
                         if (tempSavedData.submitted) setSubmitted(tempSavedData.submitted);
                         if (tempSavedData.score) setScore(tempSavedData.score);
@@ -155,15 +332,226 @@ export default function ExamForm({
 
     return (
         <div className="max-w-3xl mx-auto space-y-5">
-            {/* Progress */}
-            <div className="flex items-center gap-4">
-                <div className="flex-1 bg-gray-200 h-1.5 rounded-full overflow-hidden sticky top-4">
+            {/* Toast Notification */}
+            {toastMessage && (
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-gray-900 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-gray-800 animate-in fade-in slide-in-from-bottom-5 duration-300">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span className="text-xs font-bold tracking-wide">{toastMessage}</span>
+                </div>
+            )}
+
+            {/* Header Control Bar */}
+            <div className="relative bg-white border border-gray-200 rounded-2xl px-5 py-4 shadow-sm overflow-hidden select-none">
+                {/* Thin progress bar at the bottom edge */}
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100">
                     <div
-                        className="h-full bg-indigo-600 rounded-full transition-all duration-300"
+                        className="h-full bg-indigo-600 transition-all duration-300 rounded-r-full"
                         style={{ width: `${(answered / questions.length) * 100}%` }}
                     />
                 </div>
-                <span className="text-xs font-bold text-gray-500 w-20 text-right">{answered} / {questions.length}</span>
+
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-gray-500 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-100">
+                            {answered} / {questions.length} completadas
+                        </span>
+                        <span className="text-[11px] text-gray-400 font-medium hidden sm:inline">
+                            {Math.round((answered / questions.length) * 100)}% completado
+                        </span>
+                    </div>
+
+                    <div className="relative" ref={dropdownRef}>
+                        <button
+                            onClick={() => setShowDropdown(!showDropdown)}
+                            className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 text-gray-700 hover:text-indigo-600 rounded-xl transition text-xs font-bold border border-gray-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        >
+                            <span>Ajustes y Navegación</span>
+                            <svg
+                                className={`w-3.5 h-3.5 transform transition-transform duration-200 ${showDropdown ? "rotate-180" : ""}`}
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+
+                        {showDropdown && (
+                            <div className="absolute right-0 mt-2 w-80 bg-white/95 backdrop-blur-md border border-gray-200 rounded-2xl shadow-xl z-30 p-4 space-y-4 text-left animate-in fade-in slide-in-from-top-2 duration-200 font-sans">
+                                <div>
+                                    <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Ajustes de concentración</h4>
+                                    
+                                    <div className="space-y-3.5">
+                                        {/* Auto Advance Toggle */}
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <span className="text-xs font-bold text-gray-800 block">Auto-avanzar</span>
+                                                    <span className="text-[9px] text-gray-400 font-medium">Siguiente pregunta al responder</span>
+                                                </div>
+                                                <button
+                                                    onClick={() => {
+                                                        setAutoAdvance(prev => {
+                                                            const next = !prev;
+                                                            localStorage.setItem("exam_auto_advance", String(next));
+                                                            return next;
+                                                        });
+                                                    }}
+                                                    className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                                        autoAdvance ? "bg-indigo-600" : "bg-gray-200"
+                                                    }`}
+                                                >
+                                                    <span
+                                                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                            autoAdvance ? "translate-x-4" : "translate-x-0"
+                                                        }`}
+                                                    />
+                                                </button>
+                                            </div>
+
+                                            {autoAdvance && (
+                                                <div className="bg-gray-50/80 rounded-xl p-2 flex flex-col gap-1 border border-gray-100 animate-in fade-in slide-in-from-top-1 duration-200">
+                                                    <span className="text-[8px] font-extrabold text-gray-400 uppercase tracking-wider block">Espera de avance</span>
+                                                    <div className="flex items-center justify-between gap-1">
+                                                        {[
+                                                            { label: "0.3s", value: 300 },
+                                                            { label: "0.8s", value: 800 },
+                                                            { label: "1.5s", value: 1500 },
+                                                            { label: "3.0s", value: 3000 }
+                                                        ].map((item) => {
+                                                            const isSelected = autoAdvanceDelay === item.value;
+                                                            return (
+                                                                <button
+                                                                    key={item.value}
+                                                                    onClick={() => {
+                                                                        setAutoAdvanceDelay(item.value);
+                                                                        localStorage.setItem("exam_auto_advance_delay", String(item.value));
+                                                                    }}
+                                                                    className={`flex-1 py-1 rounded-lg text-[9px] font-black tracking-tight border transition-all cursor-pointer ${
+                                                                        isSelected
+                                                                            ? "bg-indigo-600 border-indigo-600 text-white shadow-sm"
+                                                                            : "bg-white border-gray-200 text-gray-450 hover:text-gray-700 hover:bg-gray-50"
+                                                                    }`}
+                                                                >
+                                                                    {item.label}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Concentration Mode Toggle */}
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <span className="text-xs font-bold text-gray-800 block">Modo Zen (Sin distracciones)</span>
+                                                <span className="text-[9px] text-gray-400 font-medium">Oculta menú lateral y cabeceras</span>
+                                            </div>
+                                            <button
+                                                onClick={toggleConcentrationMode}
+                                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                                    concentrationMode ? "bg-indigo-600" : "bg-gray-200"
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                        concentrationMode ? "translate-x-4" : "translate-x-0"
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+
+                                        {/* Show Chat Button Toggle */}
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <span className="text-xs font-bold text-gray-800 block">Botón de chat flotante</span>
+                                                <span className="text-[9px] text-gray-400 font-medium">Burbuja de la IA en la esquina</span>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    setShowChatButton(prev => {
+                                                        const next = !prev;
+                                                        localStorage.setItem("exam_show_chat_button", String(next));
+                                                        return next;
+                                                    });
+                                                }}
+                                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                                                    showChatButton ? "bg-indigo-600" : "bg-gray-200"
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                                        showChatButton ? "translate-x-4" : "translate-x-0"
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Open AI Chat Button as secondary utility inside settings */}
+                                <div className="pt-3 border-t border-gray-100">
+                                    <button
+                                        onClick={() => {
+                                            setIsChatOpen(true);
+                                            setShowDropdown(false);
+                                        }}
+                                        className="w-full py-2 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                                    >
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                        </svg>
+                                        Preguntar al Asistente IA
+                                    </button>
+                                </div>
+
+                                {/* Questions Map Grid */}
+                                <div className="border-t border-gray-100 pt-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Navegación</p>
+                                        <span className="text-[9px] text-gray-400 font-semibold">{answered} / {questions.length} respondidas</span>
+                                    </div>
+                                    <div className="max-h-32 overflow-y-auto pr-1 flex flex-wrap gap-1.5">
+                                        {questions.map((q, idx) => {
+                                            const isCurrent = activeQuestionStatement === q.statement;
+                                            const isQAnswered = answers[q.id] !== undefined;
+                                            const isSkipped = skippedQuestions.has(q.id);
+
+                                            let badgeCls = "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-gray-700";
+                                            if (isCurrent) {
+                                                badgeCls = "bg-indigo-50 text-indigo-700 border-indigo-500 font-black ring-2 ring-indigo-500/10";
+                                            } else if (isQAnswered) {
+                                                badgeCls = "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800";
+                                            } else if (isSkipped) {
+                                                badgeCls = "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 hover:text-amber-800";
+                                            }
+
+                                            return (
+                                                <button
+                                                    key={q.id}
+                                                    onClick={() => {
+                                                        setActiveQuestionStatement(q.statement);
+                                                        setShowDropdown(false);
+                                                        setTimeout(() => {
+                                                            const container = document.getElementById(`question-container-${q.id}`);
+                                                            if (container) {
+                                                                container.scrollIntoView({ behavior: "smooth", block: "center" });
+                                                            }
+                                                        }, 100);
+                                                    }}
+                                                    className={`w-8 h-8 rounded-lg border text-xs font-bold transition flex items-center justify-center cursor-pointer ${badgeCls}`}
+                                                >
+                                                    {idx + 1}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {/* Results */}
@@ -290,8 +678,9 @@ export default function ExamForm({
                 return (
                     <div
                         key={q.id}
+                        id={`question-container-${q.id}`}
                         onClick={() => setActiveQuestionStatement(q.statement)}
-                        className={`bg-white border rounded-2xl p-8 transition-all duration-300 ${
+                        className={`bg-white border rounded-2xl p-8 transition-all duration-300 scroll-mt-24 ${
                             isActive
                                 ? "border-indigo-400 ring-2 ring-indigo-500/10 shadow-lg shadow-indigo-500/5"
                                 : "border-gray-200 hover:border-gray-300"
@@ -354,6 +743,23 @@ export default function ExamForm({
                             })}
                         </div>
 
+                        {isActive && !submitted && (
+                            <div className="mt-5 pt-4 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-300">
+                                <span className="text-[11px] text-gray-400 font-medium flex items-center gap-1">
+                                    Puedes usar <kbd className="px-1.5 py-0.5 bg-gray-50 border border-gray-200 rounded font-mono text-[9px] text-gray-500 shadow-sm">Espacio</kbd> para saltar esta pregunta.
+                                </span>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        advanceFrom(qi, answers, true);
+                                    }}
+                                    className="px-4 py-2 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-xl transition flex items-center gap-1.5 self-end sm:self-auto cursor-pointer font-sans"
+                                >
+                                    Saltar pregunta
+                                </button>
+                            </div>
+                        )}
+
                         {submitted && answers[q.id] === undefined && (
                             <div className="mt-4 flex items-center gap-2 text-amber-600 text-xs font-bold bg-amber-50 rounded-xl px-4 py-2.5">
                                 <AlertTriangle className="w-3.5 h-3.5" />
@@ -379,7 +785,13 @@ export default function ExamForm({
                 </div>
             )}
             {/* AI Theory Chat */}
-            <TheoryChat subject={subject} currentQuestion={activeQuestionStatement || questions[0]?.statement} />
+            <TheoryChat
+                subject={subject}
+                currentQuestion={activeQuestionStatement || questions[0]?.statement}
+                isOpen={isChatOpen}
+                onOpenChange={setIsChatOpen}
+                showFloatingButton={showChatButton}
+            />
         </div>
     );
 }

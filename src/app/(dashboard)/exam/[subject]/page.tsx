@@ -63,24 +63,26 @@ export default async function SubjectExamPage({
 
     return (
         <div className="p-8">
-            <Link
-                href="/exam"
-                className="inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-indigo-600 border border-gray-200 bg-white px-4 py-2 rounded-xl mb-8 transition"
-            >
-                <ArrowLeft className="w-4 h-4" /> Asignaturas
-            </Link>
+            <div className="concentration-hide">
+                <Link
+                    href="/exam"
+                    className="inline-flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-indigo-600 border border-gray-200 bg-white px-4 py-2 rounded-xl mb-8 transition"
+                >
+                    <ArrowLeft className="w-4 h-4" /> Asignaturas
+                </Link>
 
-            <div className="mb-8">
-                <h1 className="text-2xl font-black text-gray-900 tracking-tight">
-                    {subject} {topic && <span className="text-indigo-600 font-bold ml-2 text-xl bg-indigo-50 px-3 py-1 rounded-lg">/ {topic}</span>}
-                </h1>
-                <p className="text-gray-400 text-sm mt-2">
-                    {isRepaso
-                        ? `Modo Repaso · ${questions.length} preguntas`
-                        : `Modo Examen · ${questions.length} preguntas`}
-                    {randomQ ? " · Aleatorio" : " · Orden original"}
-                    {randomA ? " · Opciones barajadas" : ""}
-                </p>
+                <div className="mb-8">
+                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+                        {subject} {topic && <span className="text-indigo-600 font-bold ml-2 text-xl bg-indigo-50 px-3 py-1 rounded-lg">/ {topic}</span>}
+                    </h1>
+                    <p className="text-gray-400 text-sm mt-2">
+                        {isRepaso
+                            ? `Modo Repaso · ${questions.length} preguntas`
+                            : `Modo Examen · ${questions.length} preguntas`}
+                        {randomQ ? " · Aleatorio" : " · Orden original"}
+                        {randomA ? " · Opciones barajadas" : ""}
+                    </p>
+                </div>
             </div>
 
             {isRepaso
