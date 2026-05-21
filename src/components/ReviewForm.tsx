@@ -538,6 +538,45 @@ export default function ReviewForm({
                 </div>
             )}
 
+            {/* Questions Navigation Map */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Navegación de Preguntas</h3>
+                    <span className="text-xs text-gray-400 font-semibold">{Object.keys(answers).length} / {total} respondidas</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    {questions.map((q, idx) => {
+                        const isCurrent = index === idx;
+                        const isAnswered = answers[q.id] !== undefined;
+                        const isCorrect = answers[q.id] === q.correctOption;
+                        const isSkipped = skippedQuestions.has(q.id);
+
+                        let badgeCls = "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-gray-700";
+                        if (isCurrent) {
+                            badgeCls = "bg-indigo-50 text-indigo-700 border-indigo-500 font-black ring-2 ring-indigo-500/10 scale-105";
+                        } else if (isAnswered) {
+                            if (isCorrect) {
+                                badgeCls = "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800";
+                            } else {
+                                badgeCls = "bg-red-50 text-red-700 border-red-300 hover:bg-red-100 hover:text-red-800";
+                            }
+                        } else if (isSkipped) {
+                            badgeCls = "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 hover:text-amber-800";
+                        }
+
+                        return (
+                            <button
+                                key={q.id}
+                                onClick={() => setIndex(idx)}
+                                className={`w-9 h-9 rounded-xl border text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${badgeCls} active:scale-95 duration-100`}
+                            >
+                                {idx + 1}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
             {/* Header Control Bar (positioned at the bottom) */}
             <div className="relative bg-white border border-gray-200 rounded-2xl px-5 py-4 shadow-sm select-none">
                 {/* Thin progress bar at the bottom edge */}
@@ -582,7 +621,7 @@ export default function ReviewForm({
                                 onClick={() => setShowDropdown(!showDropdown)}
                                 className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 text-gray-700 hover:text-indigo-600 rounded-xl transition text-xs font-bold border border-gray-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                             >
-                                <span>Ajustes y Navegación</span>
+                                <span>Ajustes de Concentración</span>
                                 <svg
                                     className={`w-3.5 h-3.5 transform transition-transform duration-200 ${showDropdown ? "rotate-180" : ""}`}
                                     fill="none"
@@ -721,48 +760,6 @@ export default function ReviewForm({
                                             </svg>
                                             Preguntar al Asistente IA
                                         </button>
-                                    </div>
-
-                                    {/* Questions Map Grid */}
-                                    <div className="border-t border-gray-100 pt-3">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Navegación</p>
-                                            <span className="text-[9px] text-gray-400 font-semibold">{Object.keys(answers).length} / {total} respondidas</span>
-                                        </div>
-                                        <div className="max-h-32 overflow-y-auto pr-1 flex flex-wrap gap-1.5">
-                                            {questions.map((q, idx) => {
-                                                const isCurrent = index === idx;
-                                                const isAnswered = answers[q.id] !== undefined;
-                                                const isCorrect = answers[q.id] === q.correctOption;
-                                                const isSkipped = skippedQuestions.has(q.id);
-
-                                                let badgeCls = "bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-gray-700";
-                                                if (isCurrent) {
-                                                    badgeCls = "bg-indigo-50 text-indigo-700 border-indigo-500 font-black ring-2 ring-indigo-500/10";
-                                                } else if (isAnswered) {
-                                                    if (isCorrect) {
-                                                        badgeCls = "bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800";
-                                                    } else {
-                                                        badgeCls = "bg-red-50 text-red-700 border-red-300 hover:bg-red-100 hover:text-red-800";
-                                                    }
-                                                } else if (isSkipped) {
-                                                    badgeCls = "bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100 hover:text-amber-800";
-                                                }
-
-                                                return (
-                                                    <button
-                                                        key={q.id}
-                                                        onClick={() => {
-                                                            setIndex(idx);
-                                                            setShowDropdown(false);
-                                                        }}
-                                                        className={`w-8 h-8 rounded-lg border text-xs font-bold transition flex items-center justify-center cursor-pointer ${badgeCls}`}
-                                                    >
-                                                        {idx + 1}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
                                     </div>
                                 </div>
                             )}
