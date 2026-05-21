@@ -47,15 +47,27 @@ export async function generateExamBySubject(subject: string, limit: number = 20,
             where: whereClause,
         });
 
-        let selected = questions;
+        // Deduplicar preguntas por enunciado (statement) ignorando espacios, mayúsculas/minúsculas y espacios duplicados
+        const seenStatements = new Set<string>();
+        const uniqueQuestions: typeof questions = [];
+
+        for (const q of questions) {
+            const normalized = q.statement.trim().toLowerCase().replace(/\s+/g, ' ');
+            if (!seenStatements.has(normalized)) {
+                seenStatements.add(normalized);
+                uniqueQuestions.push(q);
+            }
+        }
+
+        let selected = uniqueQuestions;
 
         if (randomQ) {
             // Barajar aleatoriamente usando algoritmo de Fisher-Yates (o sort random simplificado)
-            const shuffled = questions.sort(() => 0.5 - Math.random());
+            const shuffled = uniqueQuestions.sort(() => 0.5 - Math.random());
             selected = shuffled.slice(0, limit);
         } else {
             // Orden original (por ID o fecha, que es como las devuelve Prisma por defecto, pero explícito limit)
-            selected = questions.slice(0, limit);
+            selected = uniqueQuestions.slice(0, limit);
         }
 
         // Ocultar la `correctOption` para enviarlo al cliente de forma segura si hacemos la validación en el servidor,
